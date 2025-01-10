@@ -1,91 +1,64 @@
-# User Profile and Notes Application
+# Commune Website
 
-This is a User Profile and Notes Application where users can create, edit, and manage their profiles and notes. The application supports managing personal information like usernames, bios, profile pictures, and allows users to create, view, and manage their notes. Notes can be marked as public or protected and can be shared using a unique share ID.
+Welcome to the Commune Website! This is an application that allows users to create and join communes. Communes can be of various types, such as normal or ecommerce, and users can post content, manage their profiles, and search for communes.
 
-Features Implemented
+## Prerequisites
 
-1. User Authentication
-   Users can log in and sign up securely.
-   JWT tokens are used for authentication.
+Before you begin, ensure you have the following software installed:
 
-2. User Profile Management
-   Users can edit their usernames, bios, and profile pictures.
-   Profile picture updates are handled with image upload and base64 validation.
+- **Node.js** (v14.x or higher)
+- **npm** (package managers for Node.js)
+- **MySQL** (or any other database you plan to use)
 
-3. Notes Management
-   Users can create, view, and delete notes.
-   Notes can be marked as public or protected.
-   Notes are linked to the user’s profile and stored with a unique share ID.
+### Setting up the project
 
-4. Frontend
-   Built with React to create a responsive and interactive UI.
-   Tailwind CSS for styling.
-   Implemented a rich text editor to allow users to format their notes content.
+Follow these steps to get the project up and running locally.
 
-5. Backend
-   Express is used to handle API requests for user and notes data.
-   MySQL database for storing user and notes information.
-   Database setup with MySQL2 for connection pooling.
+#### 1. Clone the repository
 
-6. Image Handling
-   Users can upload profile pictures which are processed and stored in base64 format.
+Clone the repository to your local machine using Git:
 
-7. Database
-   Users and notes are stored in separate tables.
-   MySQL relationships are used to link notes to users.
-   Database seeding functionality to prepopulate user data and notes for testing.
+```bash
+git clone https://github.com/yourusername/commune-website.git
+```
 
-8. Note Sharing
-   Each note has a unique share ID that can be copied to the clipboard.
+2. Install dependencies
+   Navigate to the project folder and install the required dependencies:
 
-9. Password Hashing
-   Passwords are securely hashed using bcryptjs before being stored in the database.
+```bash
+cd commune
+npm install
+```
 
-10. Session Management
-    User sessions are managed using JWT to ensure secure and persistent logins.
+3. Create a database called "commune"
 
-11. CRUD Operations for Notes
-    Users can create, update, and delete notes associated with their profiles.
+```bash
+CREATE DATABASE commune;
+```
 
-12. Note Visibility
-    Users can choose between public and protected visibility for each note, allowing privacy control.
+5. Run the server
+   To start the development server, run the following command:
 
-13. Secure Password Handler for Registration
+```bash
+npm run dev
+```
 
-14. Error Handling and Logging
-    Comprehensive error handling in the backend to capture and log errors for debugging and monitoring.
+This will start the server and automatically restart it when you make code changes.
 
-15. Responsive Design
-    The frontend is fully responsive, ensuring the application is usable on both desktop and mobile devices.
+The server should now be running on http://localhost:5000. You can visit this URL to test the application.
 
-# Demo Link
-
-You can access the demo of the application at http://localhost:5000.
-
-Prerequisites
-To run this application locally, you'll need the following software installed:
-
-Node.js (for the backend server)
-
-Download and install from Node.js.
-MySQL (for the database)
-
-Download and install from MySQL.
-Steps to Run the Project
-Clone the repository or download the project files.
-
-Open a terminal and navigate to the project folder:
-
-`cd path/to/your/note-share`
-
-Install dependencies:
-
-`npm install`
-
-Start the development server:
-
-`npm run dev`
-
-Visit the application at http://localhost:5000 in your browser.
-
-Feel free to update or expand it further based on any additional project details!
+```bash
+/commune
+│
+├── /client                  # Front-end React application
+├── /server                  # Back-end Express API
+│   ├── /controllers         # API route controllers
+│   ├── /models              # Database models
+│   ├── /routes              # API routes
+│   └── /utils               # Helper functions
+├── /public                  # Static assets (e.g., images, CSS)
+├── /uploads                 # User-uploaded files
+├── .env                     # Environment variables
+├── .gitignore               # Git ignore file
+└── README.md                # Project documentation
+```
