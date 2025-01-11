@@ -27,7 +27,7 @@ const CommuneNavbar = ({ name }) => {
   };
 
   return (
-    <div className="w-full bg-gray-800 text-white shadow-md">
+    <div className="w-full bg-gray-800 text-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex space-x-4">
           <button

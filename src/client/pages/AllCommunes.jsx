@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom"; // Import Link for navigation
 import axios from "axios";
 import Layout from "../components/Layout";
 import { getAuthHeaders } from "../utils/Helper.js";
@@ -71,7 +72,14 @@ const AllCommunes = () => {
                         alt={commune.name}
                         className="w-16 h-16 object-cover rounded-full"
                       />
-                      <h3 className="text-xl font-semibold">{commune.name}</h3>
+                      <h3 className="text-xl font-semibold">
+                        <Link
+                          to={`/commune/${commune.commune_id}`}
+                          className="hover:underline text-blue-600"
+                        >
+                          {commune.name}
+                        </Link>
+                      </h3>
                     </div>
                   </div>
                   <p className="text-gray-600 text-sm">{commune.description}</p>
@@ -89,6 +97,14 @@ const AllCommunes = () => {
                       <strong>Created At:</strong>{" "}
                       {new Date(commune.created_at).toLocaleDateString()}
                     </p>
+                    <div className="mt-2">
+                      <Link
+                        to={`/commune/${commune.commune_id}`}
+                        className="text-blue-500 hover:underline"
+                      >
+                        View Details
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))

@@ -19,7 +19,7 @@ CREATE TABLE communes (
     name VARCHAR(255) NOT NULL,
     commune_image VARCHAR(255),
     description TEXT,
-    content TEXT NOT NULL,
+    content LONGTEXT NOT NULL,
     admin_id INT NOT NULL,
     privacy ENUM('public', 'private') DEFAULT 'public',
     location VARCHAR(255),

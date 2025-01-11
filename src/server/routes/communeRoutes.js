@@ -10,6 +10,7 @@ import {
   updateCommune,
   getAllCommunes,
   deleteCommune,
+  getCommuneUserStatus,
 } from "../controllers/communeController.js";
 
 import { validateToken } from "../middleware/auth.js";
@@ -56,8 +57,13 @@ router.post(
 
 // Example route for fetching user's communes
 router.get("/all", getAllCommunes);
-router.get("/:username", getUserCommunes);
 router.get("/communes/:communeid", getUserCommunesByCommuneId);
+router.get("/:username", getUserCommunes);
+
+router.delete("/:communeid", validateToken, deleteCommune);
+
+// Route: GET /api/commune/:communeId/:userId
+router.get("/:communeId/:userId", validateToken, getCommuneUserStatus);
 
 router.put(
   "/:communeid",

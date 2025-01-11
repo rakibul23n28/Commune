@@ -95,7 +95,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export const updateCommune = async (req, res) => {
-  const { name, description, location, commune_type, privacy } = req.body;
+  const { name, description, content, location, commune_type, privacy } =
+    req.body;
   const communeId = req.params.communeid;
   let communeImageUrl;
 
@@ -139,10 +140,11 @@ export const updateCommune = async (req, res) => {
 
     // Update commune details in the database
     const [result] = await pool.query(
-      "UPDATE Communes SET name = ?, description = ?, location = ?, commune_type = ?, privacy = ?, commune_image = ?, updated_at = NOW() WHERE commune_id = ?",
+      "UPDATE Communes SET name = ?, description = ?, content = ?, location = ?, commune_type = ?, privacy = ?, commune_image = ?, updated_at = NOW() WHERE commune_id = ?",
       [
         name,
         description,
+        content,
         location,
         commune_type,
         privacy,
@@ -234,5 +236,57 @@ export const deleteCommune = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "Server error during commune deletion" });
+  }
+};
+
+export const getCommuneUserStatus = async (req, res) => {
+  const { communeId, userId } = req.params;
+
+  try {
+    // Query to check membership and fetch details
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        cm.role, 
+        cm.joined_at, 
+        c.name AS commune_name, 
+        c.privacy
+      FROM 
+        commune_memberships cm
+      JOIN 
+        communes c ON cm.commune_id = c.commune_id
+      JOIN 
+        users u ON cm.user_id = u.user_id
+      WHERE 
+        cm.commune_id = ? AND cm.user_id = ?
+      `,
+      [communeId, userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User is not a member of this commune.",
+      });
+    }
+
+    // Return the membership details
+    res.status(200).json({
+      success: true,
+      data: {
+        role: rows[0].role,
+        joined_at: rows[0].joined_at,
+        commune: {
+          name: rows[0].commune_name,
+          privacy: rows[0].privacy,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching membership details:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
   }
 };

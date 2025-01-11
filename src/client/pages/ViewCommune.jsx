@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useCommuneMembership } from "../context/CommuneMembershipContext";
+import { useAuth } from "../context/AuthContext";
 import Layout from "../components/Layout";
 import CommuneNavbar from "../components/CommuneNavbar";
 import axios from "axios";
 
 const ViewCommune = () => {
-  const { communeid } = useParams(); // Get the commune ID from the URL
+  const { communeid } = useParams();
+  const { user } = useAuth(); // Accessing user from AuthContext
+  const { fetchMembershipStatus, isMember, getRole } = useCommuneMembership();
   const navigate = useNavigate();
+
   const [commune, setCommune] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hover, setHover] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+  const [membership, setMembership] = useState(null); // Store membership data
 
   useEffect(() => {
-    const fetchCommune = async () => {
+    const fetchCommuneData = async () => {
       try {
         const response = await axios.get(`/api/commune/communes/${communeid}`);
+        console.log(response.data.communes);
         setCommune(response.data.communes);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load commune data");
@@ -23,8 +32,27 @@ const ViewCommune = () => {
       }
     };
 
-    fetchCommune();
-  }, [communeid]);
+    const fetchUserMembership = async () => {
+      if (user && user.id && !hasFetched) {
+        try {
+          const membershipStatus = await fetchMembershipStatus(
+            communeid,
+            user.id
+          );
+          setMembership(membershipStatus);
+        } catch (err) {
+          setError(
+            err.response?.data?.message || "Failed to fetch membership status"
+          );
+        }
+        // Ensure that we set 'hasFetched' to true only once
+        setHasFetched(true);
+      }
+    };
+
+    fetchCommuneData();
+    fetchUserMembership();
+  }, [communeid, user, hasFetched, fetchMembershipStatus]); // Adding 'fetchMembershipStatus' to the dependency list
 
   if (loading) {
     return (
@@ -45,6 +73,25 @@ const ViewCommune = () => {
       </Layout>
     );
   }
+
+  const handleActionClick = (action) => {
+    if (!isMember(communeid)) {
+      alert("You need to be a member to perform this action.");
+      return;
+    }
+
+    if (action === "post") {
+      navigate(`/commune/${communeid}/posts/create`);
+    } else if (action === "list") {
+      navigate(`/commune/${communeid}/lists/create`);
+    } else if (action === "event") {
+      navigate(`/commune/${communeid}/events/create`);
+    }
+  };
+
+  // Check if the user is admin or moderator
+  const userRole = getRole(communeid);
+  const canCreateEvent = userRole === "admin" || userRole === "moderator";
 
   return (
     <Layout>
@@ -69,12 +116,11 @@ const ViewCommune = () => {
                   Description
                 </h3>
                 <p className="text-gray-600 mt-2">{commune.description}</p>
-              </div>
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold text-gray-700">Content</h3>
                 <div
-                  className="prose max-w-none mt-2 text-gray-600"
-                  dangerouslySetInnerHTML={{ __html: commune.content }}
+                  className="mt-4"
+                  dangerouslySetInnerHTML={{
+                    __html: commune.content,
+                  }}
                 ></div>
               </div>
             </div>
@@ -100,6 +146,38 @@ const ViewCommune = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Fixed Action Bar */}
+      <div
+        className="fixed bottom-6 right-6 bg-indigo-600 text-white rounded-full shadow-lg w-16 h-16 flex items-center justify-center cursor-pointer hover:bg-indigo-700 transition-all z-50"
+        onClick={() => setHover(!hover)}
+      >
+        <i className="fas fa-plus text-2xl"></i>
+        {hover && (
+          <div className="absolute bottom-20 right-0 bg-white shadow-lg rounded-lg p-4 text-black space-y-2">
+            <button
+              className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+              onClick={() => handleActionClick("post")}
+            >
+              <i className="fas fa-pencil-alt text-indigo-600 mr-2"></i> Post
+            </button>
+            <button
+              className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+              onClick={() => handleActionClick("list")}
+            >
+              <i className="fas fa-list text-indigo-600 mr-2"></i> Listing
+            </button>
+            {canCreateEvent && (
+              <button
+                className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+                onClick={() => handleActionClick("event")}
+              >
+                <i className="fas fa-calendar text-indigo-600 mr-2"></i> Event
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </Layout>
   );
