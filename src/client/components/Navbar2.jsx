@@ -4,6 +4,23 @@ import { useState } from "react";
 import axios from "axios";
 import { getAuthHeaders, timeAgo } from "../utils/Helper";
 
+function LinkBar({ title, to, icon, isActive }) {
+  return (
+    <Link to={to}>
+      <button
+        title={title}
+        className={`flex flex-col items-center border-2 rounded-full p-2 text-2xl ${
+          isActive
+            ? "text-red-500 border-red-500"
+            : "text-gray-700 border-gray-300"
+        }`}
+      >
+        <i className={`${icon} text-2xl`}></i>
+      </button>
+    </Link>
+  );
+}
+
 function Navbar() {
   const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,49 +63,35 @@ function Navbar() {
   const toggleProfileMenu = () => setIsProfileMenuOpen(!isProfileMenuOpen);
 
   return (
-    <nav className="bg-white border-b border-gray-200">
+    <nav
+      className={`bg-white border-b border-gray-200 z-50 ${
+        location.pathname.startsWith("/commune") ? "" : "sticky top-0"
+      }`}
+    >
       <div className="py-1 px-2 flex justify-between items-center">
-        <a href="#" className="text-xl font-bold text-red-500">
-          COM
-        </a>
+        <Link to="/">
+          <h1 className="text-xl font-bold text-red-500">COM</h1>
+        </Link>
 
         <div className="hidden md:flex items-center space-x-4">
-          <Link to="/">
-            <button
-              title="Home"
-              className={`flex flex-col items-center border rounded-full p-2 text-2xl ${
-                isActive("/")
-                  ? "text-red-500 border-red-500"
-                  : "text-gray-700 border-gray-300"
-              }`}
-            >
-              <i className="fas fa-home text-2xl"></i>
-            </button>
-          </Link>
-          <Link to="/communes">
-            <button
-              title="Commune"
-              className={`flex flex-col items-center border rounded-full p-2 text-2xl ${
-                isActive("/communes")
-                  ? "text-red-500 border-red-500"
-                  : "text-gray-700 border-gray-300"
-              }`}
-            >
-              <i className="fas fa-users text-2xl"></i>
-            </button>
-          </Link>
-          <Link to="/market">
-            <button
-              title="Market"
-              className={`flex flex-col items-center border rounded-full p-2 text-2xl ${
-                isActive("/market")
-                  ? "text-red-500 border-red-500"
-                  : "text-gray-700 border-gray-300"
-              }`}
-            >
-              <i className="fas fa-shopping-cart text-2xl"></i>
-            </button>
-          </Link>
+          <LinkBar
+            title="Home"
+            to="/"
+            icon="fas fa-home"
+            isActive={isActive("/")}
+          />
+          <LinkBar
+            title="Commune"
+            to="/communes"
+            icon="fas fa-layer-group"
+            isActive={isActive("/communes")}
+          />
+          <LinkBar
+            title="Market"
+            to="/market"
+            icon="fas fa-shopping-cart"
+            isActive={isActive("/market")}
+          />
           <div className="flex border border-b-2 rounded-md overflow-hidden">
             <input
               type="text"
@@ -103,45 +106,79 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Profile Icon */}
-        <div
-          onClick={toggleProfileMenu} // Toggle profile menu on click
-          className="relative h-12 w-12 bg-red-100 rounded-full flex items-center justify-center text-red-500"
-        >
-          {user ? (
+        <div className="flex items-center space-x-4">
+          {user && (
             <>
-              <img
-                src={user.profile_image || "/uploads/defuser.png"} // Use default image if profilePicUrl does not exist
-                alt={user.username}
-                className="h-12 w-12 rounded-full border border-black  object-cover"
+              <LinkBar
+                title="Joined Communes"
+                to="/usercommunes"
+                icon="fas fa-arrows-to-dot"
+                isActive={isActive("/usercommunes")}
               />
-              <div className="absolute bottom-0 right-0 bg-gray-200 rounded-full h-4 w-4 flex items-center justify-center border-2 border-gray-600">
-                <i className="fas fa-chevron-down text-[10px] text-gray-600 font-bold"></i>
-              </div>
+              <LinkBar
+                title="Chat"
+                to="/chat"
+                icon="fas fa-comments"
+                isActive={isActive("/chat")}
+              />
+              <LinkBar
+                title="Notifications"
+                to="/notifications"
+                icon="fas fa-bell"
+                isActive={isActive("/notifications")}
+              />
             </>
+          )}
+          {user ? (
+            <div
+              onClick={toggleProfileMenu}
+              className={`relative rounded-full border-2 flex items-center justify-center text-red-500 ${
+                isActive(`/profile/${user.username}`)
+                  ? "text-red-500 border-red-500"
+                  : "text-gray-700 border-gray-300"
+              }`}
+            >
+              <img
+                src={user.profile_image}
+                alt={user.username}
+                className="h-12 w-12 rounded-full object-cover"
+              />
+              <div className="absolute bottom-0 right-0 bg-white rounded-full h-4 w-4 flex items-center justify-center border-2 border-green-600">
+                <i className="fas fa-chevron-down text-[10px] text-black font-bold"></i>
+              </div>
+            </div>
           ) : (
-            ""
+            <LinkBar
+              title="Login"
+              to="/login"
+              icon="fas fa-right-to-bracket"
+              isActive={isActive("/login")}
+            />
           )}
         </div>
 
         {/* Profile Menu Popup */}
         {isProfileMenuOpen && user && (
-          <div className="absolute top-16 right-0 bg-white shadow-lg rounded-lg w-48 p-4 space-y-2 border z-50">
+          <div className="absolute top-16 right-0 bg-white shadow-lg rounded-lg w-48 p-4 space-y-4 border z-50">
+            {/* Profile Link */}
             <Link to={`/profile/${user.username}`}>
-              <button className="w-full text-left text-gray-700 hover:text-red-500">
-                Manage Profile
+              <button className="w-full flex items-center space-x-2 text-left text-gray-700 hover:text-red-500 transition-colors duration-200">
+                <i className="fas fa-user-circle text-xl"></i>
+                <span className="font-medium">Profile</span>
               </button>
             </Link>
+
+            {/* Logout Button */}
             <button
               onClick={() => {
                 if (confirm("Are you sure you want to logout?")) {
                   logout();
                 }
               }}
-              className="flex flex-row items-center text-red-500 hover:text-red-700"
+              className="w-full flex items-center space-x-2 text-red-500 hover:text-red-700 transition-colors duration-200"
             >
-              <i className="fas fa-sign-out-alt text-2xl mb-1"></i>
-              <h1 className="ml-2 text-sm">Logout</h1>
+              <i className="fas fa-sign-out-alt text-xl"></i>
+              <span className="font-medium">Logout</span>
             </button>
           </div>
         )}
@@ -181,6 +218,16 @@ function Navbar() {
           </ul>
         </div>
       )}
+      {!location.pathname.startsWith("/commune/") &&
+        !location.pathname.startsWith("/market/") && (
+          <Link to={user ? "/createcommune" : "/login"}>
+            <div className="fixed bottom-6 right-6 bg-indigo-600 text-white rounded-full p-2 space-x-1  shadow-lg flex items-center justify-center cursor-pointer hover:bg-indigo-700 transition-all z-50">
+              <i className="fas fa-plus text-2xl"></i>
+
+              <p>Commune</p>
+            </div>
+          </Link>
+        )}
     </nav>
   );
 }

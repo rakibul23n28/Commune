@@ -40,6 +40,30 @@ const Profile = () => {
     fetchUserProfile();
     fetchUserCommunes();
   }, [username]);
+
+  // Function to handle commune deletion
+  const handleDelete = async (commune_id) => {
+    const isConfirmed = window.confirm(
+      "Are you sure you want to delete this commune? There is no undo no history."
+    );
+    if (!isConfirmed) return; // If user cancels, do nothing
+
+    try {
+      const response = await axios.delete(`/api/commune/delete/${commune_id}`, {
+        headers: getAuthHeaders(),
+      });
+      if (response.data.success) {
+        setCommunes((prevCommunes) =>
+          prevCommunes.filter((commune) => commune.commune_id !== commune_id)
+        );
+        alert("Commune deleted successfully!");
+      }
+    } catch (err) {
+      console.error("Failed to delete commune:", err);
+      alert("Failed to delete commune.");
+    }
+  };
+
   // Toggle the expansion of the notes
   const toggleCommuneExpansion = (noteId) => {
     setExpandedCommuneId((prevId) => (prevId === noteId ? null : noteId));
@@ -111,7 +135,7 @@ const Profile = () => {
           </div>
 
           {/* User's Communes Section */}
-          <div className="mt-8">
+          <div className="mt-8 mb-20">
             <h2 className="text-xl font-semibold mb-4">Communes</h2>
             <div className="flex flex-col items-center">
               {communes.length > 0 ? (
@@ -204,7 +228,6 @@ const Profile = () => {
                   </div>
                 ))
               ) : (
-                /******  ea1c30c8-c963-4d26-9456-4b585e53ae7d  *******/
                 <p className="text-center text-gray-600 mt-4">
                   No communes found.
                 </p>

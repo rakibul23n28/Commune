@@ -13,6 +13,7 @@ import EditProfile from "./pages/EditProfile";
 import EditCommune from "./pages/EditCommune";
 import ViewCommune from "./pages/ViewCommune";
 import AllCommunes from "./pages/AllCommunes";
+import UserCommunes from "./pages/UserCommunes";
 //utils
 import RedirectIfAuthenticated from "./utils/RedirectIfAuthenticated";
 
@@ -60,6 +61,16 @@ const App = () => (
           }
         />
 
+        {/* User Routes */}
+        <Route
+          path="/usercommunes"
+          element={
+            <ProtectedRoute>
+              <UserCommunes />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Protected Routes */}
         <Route
           path="/editprofile"
@@ -70,7 +81,7 @@ const App = () => (
           }
         />
         <Route
-          path="/create"
+          path="/createcommune"
           element={
             <ProtectedRoute>
               <Create />

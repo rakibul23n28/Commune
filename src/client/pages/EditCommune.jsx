@@ -31,7 +31,7 @@ const EditCommune = () => {
             Authorization: `Bearer ${user.token}`,
           },
         });
-        const data = response.data.communes;
+        const data = response.data.commune;
 
         setFormData({
           name: data.name,

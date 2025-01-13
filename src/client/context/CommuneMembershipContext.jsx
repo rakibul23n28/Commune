@@ -1,27 +1,32 @@
 import React, { createContext, useState, useContext } from "react";
 import { getAuthHeaders } from "../utils/Helper.js";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 // Create the CommuneMembershipContext
 const CommuneMembershipContext = createContext();
 
 export const CommuneMembershipProvider = ({ children }) => {
-  // State to store membership status for each commune
   const [membershipStatus, setMembershipStatus] = useState({});
 
-  // Fetch membership status for a user in a specific commune
+  const { user } = useAuth();
+
   const fetchMembershipStatus = async (communeId, userId) => {
     try {
-      const response = await axios.get(`/api/commune/${communeId}/${userId}`, {
-        headers: getAuthHeaders(),
-      });
+      const response = await axios.get(
+        `/api/commune/membership/${communeId}/${userId}`
+      );
 
-      // Extract the role from the response and update the membership status
       const { role } = response.data.data;
       updateMembership(communeId, role);
     } catch (error) {
-      console.error("Error fetching membership status:", error);
-      // Optionally handle error status (e.g., set error state or retry logic)
+      if (error.response && error.response.status === 404) {
+        // Handle 404 error gracefully
+        console.warn(`User is not a member of commune ${communeId}`);
+        updateMembership(communeId, null); // Set membership status to null
+      } else {
+        console.error("Error fetching membership status:", error);
+      }
     }
   };
 
@@ -29,18 +34,37 @@ export const CommuneMembershipProvider = ({ children }) => {
   const updateMembership = (communeId, role) => {
     setMembershipStatus((prevStatus) => ({
       ...prevStatus,
-      [communeId]: role || null, // Ensure role is either a valid role or null
+      [communeId]: role || null,
     }));
+  };
+
+  // Join a commune and update the state
+  const joinCommune = async (communeId, userId) => {
+    try {
+      const response = await axios.post(`/api/commune/${communeId}/join`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+
+      const { role } = response.data.data; // Assume response contains the role
+      updateMembership(communeId, role);
+
+      return role; // Return role for further use if needed
+    } catch (error) {
+      console.error("Error joining commune:", error);
+      throw error; // Rethrow to handle in the calling component
+    }
   };
 
   // Check if the user is a member of the commune
   const isMember = (communeId) => {
-    return membershipStatus[communeId] ? true : false; // Returns true if member, else false
+    return Boolean(membershipStatus[communeId]);
   };
 
-  // Check if the user has a specific role in a commune (admin, member, etc.)
+  // Get the role of the user in a specific commune
   const getRole = (communeId) => {
-    return membershipStatus[communeId] || null; // Returns the role or null if not a member
+    return membershipStatus[communeId] || null;
   };
 
   return (
@@ -49,8 +73,9 @@ export const CommuneMembershipProvider = ({ children }) => {
         membershipStatus,
         fetchMembershipStatus,
         updateMembership,
+        joinCommune, // Added joinCommune method
         isMember,
-        getRole, // Exposing getRole method for role-specific checks
+        getRole,
       }}
     >
       {children}

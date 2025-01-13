@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const CommuneNavbar = ({ name }) => {
+const CommuneNavbar = ({ name = "" }) => {
+  // Default name to an empty string
   const navigate = useNavigate();
   const { communeid } = useParams(); // Get the commune ID from the URL
   const [searchQuery, setSearchQuery] = useState(""); // To manage the search input
@@ -27,7 +28,7 @@ const CommuneNavbar = ({ name }) => {
   };
 
   return (
-    <div className="w-full bg-gray-800 text-white shadow-md sticky top-0 z-50">
+    <div className="w-full bg-gray-800 text-white shadow-md sticky top-0 z-0">
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex space-x-4">
           <button

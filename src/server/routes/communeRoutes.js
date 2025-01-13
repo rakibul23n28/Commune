@@ -11,6 +11,11 @@ import {
   getAllCommunes,
   deleteCommune,
   getCommuneUserStatus,
+  getJoinedCommunes,
+  joinCommune,
+  getCommuneReviews,
+  setCommuneReview,
+  // getCommunesByCommuneId,
 } from "../controllers/communeController.js";
 
 import { validateToken } from "../middleware/auth.js";
@@ -57,13 +62,19 @@ router.post(
 
 // Example route for fetching user's communes
 router.get("/all", getAllCommunes);
+// router.get("/communes/c/:communeid", getCommunesByCommuneId);
+router.get("/joined/:userId", validateToken, getJoinedCommunes);
+router.post("/:communeId/join", validateToken, joinCommune);
 router.get("/communes/:communeid", getUserCommunesByCommuneId);
+router.get("/:commune_id/reviews", getCommuneReviews);
+// Route to add a review to a commune
+router.post("/:communeid/reviews", validateToken, setCommuneReview);
 router.get("/:username", getUserCommunes);
 
-router.delete("/:communeid", validateToken, deleteCommune);
+router.delete("/delete/:communeid", validateToken, deleteCommune);
 
 // Route: GET /api/commune/:communeId/:userId
-router.get("/:communeId/:userId", validateToken, getCommuneUserStatus);
+router.get("/membership/:communeId/:userId", getCommuneUserStatus);
 
 router.put(
   "/:communeid",

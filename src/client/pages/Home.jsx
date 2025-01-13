@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate, Link } from "react-router-dom"; // Import useNavigate
 import Layout from "../components/Layout";
 import { timeAgo } from "../utils/Helper";
 import { useAuth } from "../context/AuthContext";
