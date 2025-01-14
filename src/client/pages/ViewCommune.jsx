@@ -4,9 +4,11 @@ import { useCommuneMembership } from "../context/CommuneMembershipContext";
 import { useAuth } from "../context/AuthContext";
 import Layout from "../components/Layout";
 import CommuneNavbar from "../components/CommuneNavbar";
+import CommuneFixedNav from "../components/CommuneFixedNav";
 import axios from "axios";
 import { get } from "lodash";
 import { timeAgo, getAuthHeaders } from "../utils/Helper";
+import Navbar from "../components/Navbar";
 
 const ViewCommune = () => {
   const { communeid } = useParams();
@@ -64,6 +66,7 @@ const ViewCommune = () => {
       location.href = "/login";
       return;
     }
+
     try {
       await joinCommune(communeid, user.id);
       alert("You have successfully joined the commune!");
@@ -136,10 +139,11 @@ const ViewCommune = () => {
   }
   const canCreateEvent =
     getRole(communeid) === "admin" || getRole() === "moderator";
-  console.log(getRole(communeid));
 
   return (
     <Layout>
+      {/* Navbar */}
+      <CommuneFixedNav />
       <CommuneNavbar name={commune?.name} />
       <div className="w-full flex justify-center py-10">
         <div className="max-w-6xl w-full bg-white shadow-xl rounded-lg overflow-hidden grid grid-cols-3 gap-6">
@@ -226,7 +230,8 @@ const ViewCommune = () => {
         </div>
 
         <div>
-          {reviews.length > 0 ? (
+          {reviews[0].reviewer_username ||
+          (reviews.length > 1 && reviews.length > 0) ? (
             reviews.map((review, index) => (
               <div key={index} className="border-b pb-4 mb-4">
                 <p className="text-lg font-semibold">{review.username}</p>
@@ -244,49 +249,6 @@ const ViewCommune = () => {
           )}
         </div>
       </div>
-
-      {/* Join or Action Button */}
-      {isMember(communeid) ? (
-        <div
-          className="fixed bottom-6 right-6 bg-indigo-600 text-white rounded-full shadow-lg w-16 h-16 flex items-center justify-center cursor-pointer hover:bg-indigo-700 transition-all z-50"
-          onClick={() => setHover(!hover)}
-        >
-          <i className="fas fa-plus text-2xl"></i>
-          {hover && (
-            <div className="absolute bottom-20 right-0 bg-white shadow-lg rounded-lg p-4 text-black space-y-2">
-              <button
-                className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
-                onClick={() => handleActionClick("post")}
-              >
-                <i className="fas fa-pencil-alt text-indigo-600 mr-2"></i> Post
-              </button>
-              <button
-                className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
-                onClick={() => handleActionClick("list")}
-              >
-                <i className="fas fa-list text-indigo-600 mr-2"></i> Listing
-              </button>
-              {canCreateEvent && (
-                <button
-                  className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
-                  onClick={() => handleActionClick("event")}
-                >
-                  <i className="fas fa-calendar text-indigo-600 mr-2"></i> Event
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="fixed bottom-6 right-6">
-          <button
-            onClick={handleJoinCommune}
-            className="bg-indigo-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition-all"
-          >
-            Join Commune
-          </button>
-        </div>
-      )}
     </Layout>
   );
 };

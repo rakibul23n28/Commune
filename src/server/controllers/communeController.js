@@ -371,8 +371,6 @@ export const deleteCommune = async (req, res) => {
 export const getCommuneUserStatus = async (req, res) => {
   const { communeId, userId } = req.params;
 
-  console.log("sdsdsdsdsd");
-
   try {
     // Query to check membership and fetch details
     const [rows] = await pool.query(
@@ -468,61 +466,41 @@ export const getJoinedCommunes = async (req, res) => {
 };
 
 export const joinCommune = async (req, res) => {
-  const { communeId } = req.params;
-  console.log("sdsdsds");
+  const communeId = req.params.communeId;
   const userId = req.user.id;
 
-  // Step 1: Check if the commune exists
-  pool.query(
-    "SELECT * FROM communes WHERE commune_id = ?",
-    [communeId],
-    (err, results) => {
-      if (err) {
-        console.error("Error checking commune:", err);
-        return res.status(500).json({ message: "Internal server error" });
-      }
+  // Check if the user is already a member
+  const checkQuery = `
+    SELECT * FROM commune_memberships
+    WHERE commune_id = ? AND user_id = ?
+  `;
 
-      if (results.length === 0) {
-        return res.status(404).json({ message: "Commune not found" });
-      }
+  try {
+    const [rows] = await pool.query(checkQuery, [communeId, userId]);
 
-      // Step 2: Check if the user is already a member of the commune
-      pool.query(
-        "SELECT * FROM commune_memberships WHERE commune_id = ? AND user_id = ?",
-        [communeId, userId],
-        (err, results) => {
-          if (err) {
-            console.error("Error checking membership:", err);
-            return res.status(500).json({ message: "Internal server error" });
-          }
-
-          if (results.length > 0) {
-            return res
-              .status(400)
-              .json({ message: "You are already a member of this commune" });
-          }
-
-          // Step 3: Add the user to the commune
-          pool.query(
-            "INSERT INTO commune_memberships (commune_id, user_id, role, joined_at) VALUES (?, ?, ?, NOW())",
-            [communeId, userId, "member"],
-            (err, results) => {
-              if (err) {
-                console.error("Error joining commune:", err);
-                return res
-                  .status(500)
-                  .json({ message: "Internal server error" });
-              }
-
-              return res
-                .status(200)
-                .json({ message: "Successfully joined the commune" });
-            }
-          );
-        }
-      );
+    if (rows.length > 0) {
+      return res
+        .status(400)
+        .json({ message: "User already a member of this commune" });
     }
-  );
+
+    // Insert the new membership
+    const insertQuery = `
+      INSERT INTO commune_memberships (commune_id, user_id, role)
+      VALUES (?, ?, 'member')
+    `;
+
+    const [result] = await pool.query(insertQuery, [communeId, userId]);
+    console.log(result);
+
+    return res.status(200).json({
+      message: "Successfully joined the commune",
+      data: { communeId, userId, role: "member" },
+    });
+  } catch (err) {
+    console.error("Error joining commune:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
 };
 
 export const getCommuneReviews = async (req, res) => {
@@ -591,5 +569,116 @@ export const setCommuneReview = async (req, res) => {
   } catch (err) {
     console.error("Failed to add review:", err);
     res.status(500).json({ msg: "Error adding review" });
+  }
+};
+
+// Controller function to create a post
+export const createCommunePostBlog = async (req, res) => {
+  const { title, content, links, tags } = req.body;
+  const { communeId } = req.params;
+  const userId = req.user.id;
+
+  const post_type = "blog";
+
+  if (!title || !content || !post_type) {
+    return res
+      .status(400)
+      .json({ message: "Title, content, and post type are required" });
+  }
+
+  // Prepare the SQL query to insert the new post
+  const query = `
+    INSERT INTO posts (commune_id, user_id, title, content, post_type, links, tags)
+    VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+  const values = [
+    communeId,
+    userId,
+    title,
+    content,
+    post_type,
+    links || null,
+    tags || null,
+  ];
+
+  try {
+    // Execute the query asynchronously
+    const result = await pool.query(query, values);
+
+    // Send a success response
+    res
+      .status(201)
+      .json({ message: "Post created successfully", postId: result.insertId });
+  } catch (error) {
+    console.error("Error creating post:", error);
+    res.status(500).json({ message: "Error creating post" });
+  }
+};
+
+export const getCommunePosts = async (req, res) => {
+  const { communeid } = req.params;
+
+  try {
+    // Query to get all posts for the commune
+    const query = `
+      SELECT p.post_id, p.title, p.content, p.created_at, u.username 
+      FROM posts p
+      JOIN users u ON p.user_id = u.user_id
+      WHERE p.commune_id = ?
+      ORDER BY p.created_at DESC
+    `;
+
+    const results = await pool.query(query, [communeid]);
+
+    res.json({ posts: results });
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    res.status(500).json({ message: "Error fetching posts" });
+  }
+};
+
+export const createCommunePostListing = async (req, res) => {
+  const { communeid } = req.params;
+  const { metaData, columns, data } = req.body;
+  console.log(communeid);
+
+  // Assuming you have the user_id from the JWT authentication
+  const user_id = req.user.id; // Retrieve from JWT (authentication middleware)
+
+  try {
+    // Step 1: Insert new post into the posts table
+    const [postResult] = await pool.query(
+      "INSERT INTO posts (commune_id, user_id, title, content, post_type, links, tags) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [
+        communeid,
+        user_id,
+        metaData.title,
+        metaData.description,
+        "listing",
+        metaData.links,
+        metaData.tags,
+      ]
+    );
+    const post_id = postResult.insertId;
+
+    // Step 2: Insert dynamic attributes into the post_attributes table
+    const postAttributes = data.map((item) => {
+      return [
+        post_id,
+        JSON.stringify(item), // Store attributes as JSON
+      ];
+    });
+
+    // Use bulk insert for attributes
+    await pool.query(
+      "INSERT INTO post_attributes (post_id, attributes) VALUES ?",
+      [postAttributes]
+    );
+
+    // Respond with success
+    res.status(200).json({ message: "Listing created successfully", post_id });
+  } catch (error) {
+    console.error("Error saving data:", error);
+    res.status(500).json({ error: "Error saving data" });
   }
 };

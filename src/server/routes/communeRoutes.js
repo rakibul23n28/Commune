@@ -15,6 +15,9 @@ import {
   joinCommune,
   getCommuneReviews,
   setCommuneReview,
+  createCommunePostBlog,
+  getCommunePosts,
+  createCommunePostListing,
   // getCommunesByCommuneId,
 } from "../controllers/communeController.js";
 
@@ -64,17 +67,25 @@ router.post(
 router.get("/all", getAllCommunes);
 // router.get("/communes/c/:communeid", getCommunesByCommuneId);
 router.get("/joined/:userId", validateToken, getJoinedCommunes);
-router.post("/:communeId/join", validateToken, joinCommune);
 router.get("/communes/:communeid", getUserCommunesByCommuneId);
 router.get("/:commune_id/reviews", getCommuneReviews);
+router.get("/:communeid/posts", getCommunePosts);
+router.get("/:username", getUserCommunes);
 // Route to add a review to a commune
 router.post("/:communeid/reviews", validateToken, setCommuneReview);
-router.get("/:username", getUserCommunes);
+// POST route to create a new post (listing)
+router.post("/:communeid/listings", validateToken, createCommunePostListing);
 
+router.post("/create/:communeId/post", validateToken, createCommunePostBlog);
+router.post("/membership/:communeId/join", validateToken, joinCommune);
 router.delete("/delete/:communeid", validateToken, deleteCommune);
 
 // Route: GET /api/commune/:communeId/:userId
-router.get("/membership/:communeId/:userId", getCommuneUserStatus);
+router.get(
+  "/membership/:communeId/:userId",
+  validateToken,
+  getCommuneUserStatus
+);
 
 router.put(
   "/:communeid",

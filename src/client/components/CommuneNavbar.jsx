@@ -10,10 +10,6 @@ const CommuneNavbar = ({ name = "" }) => {
   const handleNavigation = (option) => {
     if (option === "profile") {
       navigate(`/commune/${communeid}`);
-    } else if (option === "post") {
-      navigate(`/commune/${communeid}/posts`);
-    } else if (option === "list") {
-      navigate(`/commune/${communeid}/lists`);
     } else if (option === "otherCommunes") {
       navigate(`/communes`);
     } else if (option === "settings") {
@@ -38,27 +34,7 @@ const CommuneNavbar = ({ name = "" }) => {
             <i className="fas fa-user mr-2"></i>
             {name.length > 30 ? `${name.slice(0, 30)}...` : name}
           </button>
-          <button
-            onClick={() => handleNavigation("post")}
-            className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
-          >
-            <i className="fas fa-file-alt mr-2"></i>
-            Posts
-          </button>
-          <button
-            onClick={() => handleNavigation("list")}
-            className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
-          >
-            <i className="fas fa-list mr-2"></i>
-            Lists
-          </button>
-          <button
-            onClick={() => handleNavigation("otherCommunes")}
-            className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
-          >
-            <i className="fas fa-calendar mr-2"></i>
-            Events
-          </button>
+
           <button
             onClick={() => handleNavigation("otherCommunes")}
             className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"

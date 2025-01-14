@@ -64,7 +64,7 @@ const UserCommunes = () => {
 
   return (
     <Layout>
-      <div className="flex justify-center mt-8">
+      <div className="w-1/2 mx-auto p-6 bg-white rounded-lg shadow-md">
         <div className="w-full p-6">
           <h1 className="text-2xl font-bold mb-4">
             {user.username}'s Joined Communes

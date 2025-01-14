@@ -14,7 +14,12 @@ export const CommuneMembershipProvider = ({ children }) => {
   const fetchMembershipStatus = async (communeId, userId) => {
     try {
       const response = await axios.get(
-        `/api/commune/membership/${communeId}/${userId}`
+        `/api/commune/membership/${communeId}/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
       );
 
       const { role } = response.data.data;
@@ -41,11 +46,15 @@ export const CommuneMembershipProvider = ({ children }) => {
   // Join a commune and update the state
   const joinCommune = async (communeId, userId) => {
     try {
-      const response = await axios.post(`/api/commune/${communeId}/join`, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      });
+      const response = await axios.post(
+        `/api/commune/membership/${communeId}/join`,
+        {}, // Empty data object since you only need headers
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
 
       const { role } = response.data.data; // Assume response contains the role
       updateMembership(communeId, role);
