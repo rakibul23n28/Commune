@@ -19,6 +19,7 @@ import CreatePostPage from "./pages/CreatePostPage";
 import CommunePostsPage from "./pages/CommunePostsPage";
 
 import DynamicListingForm from "./pages/DynamicListingForm";
+import CommuneListsPage from "./pages/CommuneListsPage";
 //utils
 import RedirectIfAuthenticated from "./utils/RedirectIfAuthenticated";
 
@@ -53,6 +54,14 @@ const App = () => (
           element={
             <CommuneMembershipProvider>
               <CommunePostsPage />
+            </CommuneMembershipProvider>
+          }
+        />
+        <Route
+          path="/commune/:communeid/lists"
+          element={
+            <CommuneMembershipProvider>
+              <CommuneListsPage />
             </CommuneMembershipProvider>
           }
         />

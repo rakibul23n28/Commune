@@ -18,6 +18,7 @@ import {
   createCommunePostBlog,
   getCommunePosts,
   createCommunePostListing,
+  getCommuneListings,
   // getCommunesByCommuneId,
 } from "../controllers/communeController.js";
 
@@ -70,6 +71,7 @@ router.get("/joined/:userId", validateToken, getJoinedCommunes);
 router.get("/communes/:communeid", getUserCommunesByCommuneId);
 router.get("/:commune_id/reviews", getCommuneReviews);
 router.get("/:communeid/posts", getCommunePosts);
+router.get("/:communeid/lists", getCommuneListings);
 router.get("/:username", getUserCommunes);
 // Route to add a review to a commune
 router.post("/:communeid/reviews", validateToken, setCommuneReview);

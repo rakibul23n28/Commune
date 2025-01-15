@@ -491,7 +491,6 @@ export const joinCommune = async (req, res) => {
     `;
 
     const [result] = await pool.query(insertQuery, [communeId, userId]);
-    console.log(result);
 
     return res.status(200).json({
       message: "Successfully joined the commune",
@@ -640,7 +639,6 @@ export const getCommunePosts = async (req, res) => {
 export const createCommunePostListing = async (req, res) => {
   const { communeid } = req.params;
   const { metaData, columns, data } = req.body;
-  console.log(communeid);
 
   // Assuming you have the user_id from the JWT authentication
   const user_id = req.user.id; // Retrieve from JWT (authentication middleware)
@@ -680,5 +678,63 @@ export const createCommunePostListing = async (req, res) => {
   } catch (error) {
     console.error("Error saving data:", error);
     res.status(500).json({ error: "Error saving data" });
+  }
+};
+
+export const getCommuneListings = async (req, res) => {
+  const { communeid } = req.params;
+
+  try {
+    // Fetch all posts of type 'listing' for the specified commune
+    const [posts] = await pool.query(
+      "SELECT * FROM posts WHERE commune_id = ? AND post_type = 'listing'",
+      [communeid]
+    );
+
+    const listings = await Promise.all(
+      posts.map(async (post) => {
+        const [attributes] = await pool.query(
+          "SELECT attributes FROM post_attributes WHERE post_id = ?",
+          [post.post_id]
+        );
+
+        // Safeguard against parsing issues
+        const parsedAttributes = attributes.map((attr) => {
+          if (typeof attr.attributes === "string") {
+            return JSON.parse(attr.attributes);
+          }
+          return attr.attributes; // Already an object
+        });
+
+        // Columns are the names of the attributes
+        const columns = parsedAttributes.map((attr) => ({
+          attribute_name: attr.attribute_name || "Unnamed Attribute", // Default if `attribute_name` is missing
+          attribute_type: attr.attribute_type || "Unknown Type", // Default if `attribute_type` is missing
+        }));
+
+        // Rows: Each row is an object with attribute names as keys and values for each person
+        const rows = parsedAttributes.map((attr) => ({
+          [attr.attribute_name]: Array.isArray(attr.attribute_value)
+            ? attr.attribute_value.join(", ") // Join array values with a comma
+            : attr.attribute_value || "No Value", // If not an array, use the value or fallback
+        }));
+
+        return {
+          metaData: {
+            title: post.title,
+            description: post.content,
+            links: post.links,
+            tags: post.tags,
+          },
+          columns,
+          rows,
+        };
+      })
+    );
+
+    res.status(200).json(listings);
+  } catch (error) {
+    console.error("Error fetching listings:", error);
+    res.status(500).json({ error: "Error fetching listings" });
   }
 };

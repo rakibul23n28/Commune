@@ -71,7 +71,7 @@ CREATE TABLE commune_reviews (
 CREATE TABLE post_attributes (
     attribute_id INT AUTO_INCREMENT PRIMARY KEY,
     post_id INT NOT NULL,
-    attribute JSON NOT NULL,
+    attributes JSON NOT NULL,
     FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE
 );
 
