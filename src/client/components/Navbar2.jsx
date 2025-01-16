@@ -82,7 +82,7 @@ function Navbar() {
           />
           <LinkBar
             title="Commune"
-            to="/communes"
+            to="/commune"
             icon="fas fa-layer-group"
             isActive={isActive("/communes")}
           />

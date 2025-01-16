@@ -4,6 +4,7 @@ import {
   getUser,
   updateUser,
   getUserByUsername,
+  userCommunesInfo,
 } from "../controllers/userController.js";
 import { validateToken } from "../middleware/auth.js";
 import path from "path";
@@ -33,6 +34,7 @@ router.put(
 );
 router.get("/profile/:username", getUserByUsername);
 router.get("/:id", getUser);
+router.get("/communes/info/:userId", userCommunesInfo);
 
 // Add the multer middleware to handle file upload on the /update route
 

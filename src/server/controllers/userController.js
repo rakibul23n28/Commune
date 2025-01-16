@@ -137,3 +137,37 @@ export const getUserByUsername = async (req, res) => {
     res.status(500).json({ msg: "Server error during user retrieval" });
   }
 };
+
+export const userCommunesInfo = async (req, res) => {
+  const { userId } = req.params;
+  const { commune_id } = req.query;
+
+  try {
+    const query = `
+      SELECT 
+        c.commune_id,
+        c.name AS commune_name,
+        c.description,
+        c.commune_image,
+        cm.role 
+      FROM commune_memberships cm
+      JOIN communes c ON cm.commune_id = c.commune_id
+      WHERE cm.user_id = ? AND cm.role != 'member' AND c.commune_id != ? 
+    `;
+
+    const [rows] = await pool.query(query, [userId, commune_id]);
+
+    if (rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No communes found for the user." });
+    }
+
+    res.json({ communes: rows });
+  } catch (error) {
+    console.error("Error fetching user communes:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching communes." });
+  }
+};

@@ -33,8 +33,10 @@ const FixedButtons = () => {
       }
     };
 
-    fetchUserMembership();
-  }, [membership]);
+    if (communeid && user?.id) {
+      fetchUserMembership();
+    }
+  }, [communeid, user.id]);
 
   const handleActionClick = (action) => {
     location.href = `/commune/create/${communeid}/${action}`;

@@ -24,8 +24,7 @@ const CreatePostPage = () => {
     const loadCommuneData = async () => {
       if (!communeData) {
         try {
-          await fetchCommuneData(communeid); // Fetch commune data from the context
-          console.log("Commune data fetched:", communeData); // Log after fetching data
+          await fetchCommuneData(communeid);
         } catch (err) {
           setErrorMessage(
             err.response?.data?.message || "Failed to load commune data"
@@ -37,15 +36,14 @@ const CreatePostPage = () => {
     };
 
     loadCommuneData();
-  }, [communeid, fetchCommuneData, communeData]); // Add communeData to the dependency array
+  }, [communeid, fetchCommuneData, communeData]);
 
   useEffect(() => {
     if (communeData) {
-      setCommune(communeData); // Update commune state after communeData has been fetched
+      setCommune(communeData);
     }
-  }, [communeData]); // Watch for changes in communeData and update state accordingly
+  }, [communeData]);
 
-  // Function to handle post creation
   const handleCreatePost = async (e) => {
     e.preventDefault();
 
@@ -57,13 +55,13 @@ const CreatePostPage = () => {
     try {
       const role = getRole(communeid);
       if (role) {
-        const response = await axios.post(
+        await axios.post(
           `/api/commune/create/${communeid}/post`,
           {
             title,
             content,
-            links,
-            tags,
+            links: links,
+            tags: tags,
           },
           {
             headers: {
@@ -100,7 +98,6 @@ const CreatePostPage = () => {
 
   return (
     <Layout>
-      {/* Navbar */}
       <CommuneFixedNav />
       <CommuneNavbar name={commune?.name} />
       <div className="w-1/2 mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -159,7 +156,7 @@ const CreatePostPage = () => {
                 htmlFor="links"
                 className="block text-sm font-medium text-gray-700"
               >
-                Links (optional)
+                Links (separated by space)
               </label>
               <input
                 id="links"
@@ -169,13 +166,32 @@ const CreatePostPage = () => {
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Add any relevant links"
               />
+              {links && (
+                <div className="mt-2">
+                  <h3 className="text-sm font-medium text-gray-700">Links:</h3>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {links.split(" ").map((link, index) => (
+                      <a
+                        key={index}
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block bg-green-100 text-green-800 text-xs font-semibold py-1 px-2 rounded-full hover:bg-green-200"
+                      >
+                        {link}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
             <div className="mb-4">
               <label
                 htmlFor="tags"
                 className="block text-sm font-medium text-gray-700"
               >
-                Tags (optional)
+                Tags (separated by commas)
               </label>
               <input
                 id="tags"
@@ -183,12 +199,12 @@ const CreatePostPage = () => {
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Add tags, separated by commas"
+                placeholder="Add tags"
               />
               {tags && (
                 <div className="mt-2">
                   <h3 className="text-sm font-medium text-gray-700">Tags:</h3>
-                  <div className="flex space-x-2 mt-1">
+                  <div className="flex flex-wrap gap-2 mt-1">
                     {tags.split(",").map((tag, index) => (
                       <span
                         key={index}

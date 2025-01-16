@@ -25,7 +25,6 @@ export const CommuneMembershipProvider = ({ children }) => {
     }
   };
 
-  // Fetch membership status for a user in a specific commune
   const fetchMembershipStatus = async (communeId, userId) => {
     try {
       const response = await axios.get(
@@ -38,15 +37,20 @@ export const CommuneMembershipProvider = ({ children }) => {
       );
 
       const { role } = response.data.data;
-      updateMembership(communeId, role);
+      // Only update state if role is different
+      if (membershipStatus[communeId] !== role) {
+        updateMembership(communeId, role);
+      }
+
+      return role; // Return role for direct use in the component if needed
     } catch (error) {
       if (error.response && error.response.status === 404) {
-        // Handle 404 error gracefully
         console.warn(`User is not a member of commune ${communeId}`);
-        updateMembership(communeId, null); // Set membership status to null
+        updateMembership(communeId, null);
       } else {
         console.error("Error fetching membership status:", error);
       }
+      throw error; // Rethrow for handling in the calling component
     }
   };
 

@@ -645,7 +645,7 @@ export const getCommunePosts = async (req, res) => {
   try {
     // Query to get all posts for the commune
     const query = `
-      SELECT p.post_id, p.title, p.content, p.created_at, u.username 
+      SELECT p.post_id, p.title, p.content, p.created_at, u.username, u.profile_image , p.user_id, p.links
       FROM posts p
       JOIN users u ON p.user_id = u.user_id
       WHERE p.commune_id = ?
@@ -658,6 +658,86 @@ export const getCommunePosts = async (req, res) => {
   } catch (error) {
     console.error("Error fetching posts:", error);
     res.status(500).json({ message: "Error fetching posts" });
+  }
+};
+
+export const deleteCommunePost = async (req, res) => {
+  const { postid } = req.params;
+
+  try {
+    // SQL query to delete the post
+    const query = `
+      DELETE FROM posts
+      WHERE post_id = ?
+    `;
+
+    // Execute the query with the provided post ID
+    await pool.query(query, [postid]);
+
+    // Return a success response
+    res.json({ message: "Post deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting post:", error.message);
+    res.status(500).json({ message: "Error deleting post" });
+  }
+};
+
+export const getCommunePost = async (req, res) => {
+  const { postid } = req.params;
+
+  try {
+    // SQL query to fetch the post details
+    const query = `
+      SELECT 
+        p.post_id, 
+        p.title, 
+        p.content, 
+        p.links,
+        p.tags,
+        p.created_at, 
+        u.username, 
+        u.profile_image 
+      FROM posts p
+      JOIN users u ON p.user_id = u.user_id
+      WHERE p.post_id = ?
+    `;
+
+    // Execute the query with the provided post ID
+    const [result] = await pool.query(query, [postid]);
+
+    // Check if the post exists
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Return the post data
+    res.json({ post: result[0] });
+  } catch (error) {
+    console.error("Error fetching post:", error.message);
+    res.status(500).json({ message: "Error fetching post" });
+  }
+};
+
+export const updateCommunePost = async (req, res) => {
+  const { postid } = req.params;
+  const { title, content, links, tags } = req.body;
+
+  try {
+    // SQL query to update the post
+    const query = `
+      UPDATE posts
+      SET title = ?, content = ?, links = ?, tags = ?
+      WHERE post_id = ?
+    `;
+
+    // Execute the query with the provided post ID and updated data
+    await pool.query(query, [title, content, links, tags, postid]);
+
+    // Return a success response
+    res.json({ message: "Post updated successfully" });
+  } catch (error) {
+    console.error("Error updating post:", error.message);
+    res.status(500).json({ message: "Error updating post" });
   }
 };
 
@@ -750,6 +830,7 @@ export const getCommuneListings = async (req, res) => {
             description: post.content,
             links: post.links,
             tags: post.tags,
+            post_id: post.post_id,
           },
           columns,
           rows,
@@ -761,6 +842,58 @@ export const getCommuneListings = async (req, res) => {
   } catch (error) {
     console.error("Error fetching listings:", error);
     res.status(500).json({ error: "Error fetching listings" });
+  }
+};
+
+export const getCommuneListing = async (req, res) => {
+  const { listid } = req.params;
+  const postid = listid;
+
+  try {
+    const [post] = await pool.query("SELECT * FROM posts WHERE post_id = ?", [
+      postid,
+    ]);
+
+    const [attributes] = await pool.query(
+      "SELECT attributes FROM post_attributes WHERE post_id = ?",
+      [postid]
+    );
+
+    // Safeguard against parsing issues
+    const parsedAttributes = attributes.map((attr) => {
+      if (typeof attr.attributes === "string") {
+        return JSON.parse(attr.attributes);
+      }
+      return attr.attributes; // Already an object
+    });
+
+    // Columns are the names of the attributes
+    const columns = parsedAttributes.map((attr) => ({
+      attribute_name: attr.attribute_name || "Unnamed Attribute", // Default if `attribute_name` is missing
+      attribute_type: attr.attribute_type || "Unknown Type", // Default if `attribute_type` is missing
+    }));
+
+    // Rows: Each row is an object with attribute names as keys and values for each person
+    const rows = parsedAttributes.map((attr) => ({
+      [attr.attribute_name]: Array.isArray(attr.attribute_value)
+        ? attr.attribute_value.join(", ") // Join array values with a comma
+        : attr.attribute_value || "No Value", // If not an array, use the value or fallback
+    }));
+
+    res.status(200).json({
+      metaData: {
+        title: post[0].title,
+        description: post[0].content,
+        links: post[0].links,
+        tags: post[0].tags,
+        post_id: post[0].post_id,
+      },
+      columns,
+      rows,
+    });
+  } catch (error) {
+    console.error("Error fetching listing:", error);
+    res.status(500).json({ error: "Error fetching listing" });
   }
 };
 
@@ -810,5 +943,172 @@ export const createCommuneEvent = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error creating event. Please try again." });
+  }
+};
+
+export const getCommuneEvents = async (req, res) => {
+  const { communeid } = req.params;
+
+  try {
+    const [events] = await pool.query(
+      `SELECT e.*, u.username AS created_by_username 
+       FROM events e
+       JOIN users u ON e.created_by = u.user_id
+       WHERE e.commune_id = ?`,
+      [communeid]
+    );
+
+    res.status(200).json({ events: events });
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    res.status(500).json({ error: "Error fetching events" });
+  }
+};
+
+export const getCommuneEvent = async (req, res) => {
+  const { eventid } = req.params;
+
+  try {
+    const [event] = await pool.query(
+      `SELECT e.*, u.username AS created_by_username 
+       FROM events e
+       JOIN users u ON e.created_by = u.user_id
+       WHERE e.event_id = ?`,
+      [eventid]
+    );
+
+    res.status(200).json({ event: event[0] });
+  } catch (error) {
+    console.error("Error fetching event:", error);
+    res.status(500).json({ error: "Error fetching event" });
+  }
+};
+export const deleteCommuneEvent = async (req, res) => {
+  const eventId = req.params.eventid;
+
+  try {
+    // Fetch the event details to check if it exists
+    const [events] = await pool.query(
+      "SELECT event_image FROM events WHERE event_id = ?",
+      [eventId]
+    );
+    const event = events[0];
+
+    if (!event) {
+      return res.status(404).json({ msg: "Event not found" });
+    }
+
+    // Delete the event image if it exists
+    if (event.event_image) {
+      const imagePath = path.join(__dirname, "../../../", event.event_image);
+      fs.unlink(imagePath, (err) => {
+        if (err) {
+          console.error("Failed to delete event image:", err);
+        }
+      });
+    }
+
+    // Delete the event from the database
+    const [result] = await pool.query("DELETE FROM events WHERE event_id = ?", [
+      eventId,
+    ]);
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({ msg: "Failed to delete event" });
+    }
+
+    res.json({ msg: "Event deleted successfully", success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Server error during event deletion" });
+  }
+};
+
+export const updateCommuneEvent = async (req, res) => {
+  const { eventid } = req.params;
+  const { eventName, eventDescription, eventDate } = req.body;
+  let eventImageUrl;
+
+  if (!eventName || !eventDescription || !eventDate) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    // Fetch existing event details
+    const [events] = await pool.query(
+      "SELECT event_image FROM events WHERE event_id = ?",
+      [eventid]
+    );
+    const event = events[0];
+
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Handle file upload for the new image
+    if (req.file) {
+      eventImageUrl = `/uploads/commune_images/events/${req.file.filename}`;
+
+      // Delete the old event image if it exists
+      if (event.event_image) {
+        const oldImagePath = path.join(
+          __dirname,
+          "../../../",
+          event.event_image
+        );
+
+        fs.unlink(oldImagePath, (err) => {
+          if (err) {
+            console.error("Failed to delete old event image:", err);
+          }
+        });
+      }
+    } else {
+      eventImageUrl = event.event_image; // Keep the old image if no new image is uploaded
+    }
+
+    // Update event details in the database
+    const [result] = await pool.query(
+      "UPDATE events SET event_name = ?, event_description = ?, event_date = ?, event_image = ? WHERE event_id = ?",
+      [eventName, eventDescription, eventDate, eventImageUrl, eventid]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({ message: "Failed to update event" });
+    }
+
+    res.status(200).json({
+      message: "Event updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating event:", error);
+    res.status(500).json({ error: "Error updating event" });
+  }
+};
+
+export const collaborationPost = async (req, res) => {
+  const { commune_id_1, commune_id_2, post_id } = req.body;
+
+  try {
+    // Check if a similar collaboration already exists
+    const [existingCollaboration] = await pool.query(
+      "SELECT * FROM collaborations_post WHERE commune_id_1 = ? AND commune_id_2 = ? AND post_id = ?",
+      [commune_id_1, commune_id_2, post_id]
+    );
+
+    if (existingCollaboration.length !== 0) {
+      return res.status(400).json({ message: "Collaboration already exists." });
+    }
+
+    // Insert the new collaboration
+    await pool.query(
+      "INSERT INTO collaborations_post (commune_id_1, commune_id_2, post_id) VALUES (?, ?, ?)",
+      [commune_id_1, commune_id_2, post_id]
+    );
+
+    res.status(201).json({ message: "Collaboration request created." });
+  } catch (error) {
+    console.error("Error creating collaboration:", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 };

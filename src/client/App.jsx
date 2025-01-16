@@ -14,19 +14,26 @@ import EditCommune from "./pages/EditCommune";
 import ViewCommune from "./pages/ViewCommune";
 import AllCommunes from "./pages/AllCommunes";
 import UserCommunes from "./pages/UserCommunes";
-//posts
+
+// Posts
 import CreatePostPage from "./pages/CreatePostPage";
 import CommunePostsPage from "./pages/CommunePostsPage";
+import EditPostsPage from "./pages/EditPostsPage";
+import ViewPostPage from "./pages/ViewPostPage";
 
-//lists
+// Lists
 import DynamicListingForm from "./pages/DynamicListingForm";
 import CommuneListsPage from "./pages/CommuneListsPage";
+import ViewListPage from "./pages/ViewListPage";
 
-//event
+// Events
 import CreateEvent from "./pages/CreateEvent";
+import CommuneEventsPage from "./pages/CommuneEventsPage";
+import EditEventPage from "./pages/EditEventPage";
 
-//utils
+// Utils
 import RedirectIfAuthenticated from "./utils/RedirectIfAuthenticated";
+import AdminModeratorProtected from "./utils/AdminModeratorProtected";
 
 const App = () => (
   <AuthProvider>
@@ -36,70 +43,74 @@ const App = () => (
         <Route path="/" element={<Home />} />
         <Route path="/profile/:username" element={<Profile />} />
 
-        {/* Commune Routes with Membership Context */}
+        {/* Commune Routes (Wrapped with CommuneMembershipProvider) */}
         <Route
-          path="/commune/:communeid"
+          path="/commune/*"
           element={
             <CommuneMembershipProvider>
-              <ViewCommune />
-            </CommuneMembershipProvider>
-          }
-        />
-        <Route
-          path="/communes"
-          element={
-            <CommuneMembershipProvider>
-              <AllCommunes />
-            </CommuneMembershipProvider>
-          }
-        />
+              <Routes>
+                <Route path=":communeid" element={<ViewCommune />} />
+                <Route path="" element={<AllCommunes />} />
+                <Route path=":communeid/posts" element={<CommunePostsPage />} />
+                <Route path=":communeid/lists" element={<CommuneListsPage />} />
+                <Route
+                  path=":communeid/events"
+                  element={<CommuneEventsPage />}
+                />
+                <Route
+                  path="create/:communeid/post"
+                  element={
+                    <ProtectedRoute>
+                      <CreatePostPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="create/:communeid/list"
+                  element={
+                    <ProtectedRoute>
+                      <DynamicListingForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/create/:communeid/event"
+                  element={
+                    <ProtectedRoute>
+                      <AdminModeratorProtected>
+                        <CreateEvent />
+                      </AdminModeratorProtected>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="edit/:communeid/:postid/post"
+                  element={
+                    <ProtectedRoute>
+                      <EditPostsPage />
+                    </ProtectedRoute>
+                  }
+                />
 
-        <Route
-          path="/commune/:communeid/posts"
-          element={
-            <CommuneMembershipProvider>
-              <CommunePostsPage />
-            </CommuneMembershipProvider>
-          }
-        />
-        <Route
-          path="/commune/:communeid/lists"
-          element={
-            <CommuneMembershipProvider>
-              <CommuneListsPage />
-            </CommuneMembershipProvider>
-          }
-        />
+                <Route
+                  path="edit/:communeid/:eventid/event"
+                  element={
+                    <ProtectedRoute>
+                      <EditEventPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/:communeid/post/:postid"
+                  element={<ViewPostPage />}
+                />
 
-        <Route
-          path="/commune/create/:communeid/post"
-          element={
-            <ProtectedRoute>
-              <CommuneMembershipProvider>
-                <CreatePostPage />
-              </CommuneMembershipProvider>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/commune/create/:communeid/list"
-          element={
-            <ProtectedRoute>
-              <CommuneMembershipProvider>
-                <DynamicListingForm />
-              </CommuneMembershipProvider>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/commune/create/:communeid/event"
-          element={
-            <ProtectedRoute>
-              <CommuneMembershipProvider>
-                <CreateEvent />
-              </CommuneMembershipProvider>
-            </ProtectedRoute>
+                <Route
+                  path="/:communeid/list/:listid"
+                  element={<ViewListPage />}
+                />
+              </Routes>
+            </CommuneMembershipProvider>
           }
         />
 

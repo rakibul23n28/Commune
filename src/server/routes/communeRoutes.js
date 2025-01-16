@@ -15,12 +15,24 @@ import {
   joinCommune,
   getCommuneReviews,
   setCommuneReview,
+  //posts
   createCommunePostBlog,
   getCommunePosts,
+  deleteCommunePost,
+  updateCommunePost,
+  //lists
   createCommunePostListing,
   getCommuneListings,
+  getCommuneListing,
   getCommuneSmallInfo,
+  //events
   createCommuneEvent,
+  getCommuneEvents,
+  getCommuneEvent,
+  deleteCommuneEvent,
+  updateCommuneEvent,
+  collaborationPost,
+  getCommunePost,
   // getCommunesByCommuneId,
 } from "../controllers/communeController.js";
 
@@ -66,23 +78,6 @@ router.post(
   createCommune
 );
 
-// Example route for fetching user's communes
-router.get("/all", getAllCommunes);
-// router.get("/communes/c/:communeid", getCommunesByCommuneId);
-router.get("/joined/:userId", validateToken, getJoinedCommunes);
-router.get("/communes/:communeid", getUserCommunesByCommuneId);
-router.get("/communes/info/:communeid", getCommuneSmallInfo);
-router.get("/:commune_id/reviews", getCommuneReviews);
-router.get("/:communeid/posts", getCommunePosts);
-router.get("/:communeid/lists", getCommuneListings);
-router.get("/:username", getUserCommunes);
-// Route to add a review to a commune
-router.post("/:communeid/reviews", validateToken, setCommuneReview);
-// POST route to create a new post (listing)
-router.post("/:communeid/listings", validateToken, createCommunePostListing);
-
-router.post("/create/:communeId/post", validateToken, createCommunePostBlog);
-
 // Configure Multer storage
 const storageEvent = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -107,6 +102,38 @@ export const uploadEvent = multer({
     }
   },
 }).single("eventImage");
+
+// Example route for fetching user's communes
+router.get("/all", getAllCommunes);
+router.post("/collaboration/post", validateToken, collaborationPost);
+// router.get("/communes/c/:communeid", getCommunesByCommuneId);
+router.get("/joined/:userId", validateToken, getJoinedCommunes);
+router.get("/communes/:communeid", getUserCommunesByCommuneId);
+router.get("/communes/info/:communeid", getCommuneSmallInfo);
+//post
+router.get("/post/:postid", getCommunePost);
+router.put("/post/:postid", validateToken, updateCommunePost);
+router.delete("/post/:postid", deleteCommunePost);
+//event
+router.get("/event/:eventid", getCommuneEvent);
+router.put("/event/:eventid", validateToken, uploadEvent, updateCommuneEvent);
+router.delete("/event/:eventid", deleteCommuneEvent);
+//list
+router.get("/list/:listid", getCommuneListing);
+
+router.get("/:commune_id/reviews", getCommuneReviews);
+router.get("/:communeid/posts", getCommunePosts);
+router.get("/:communeid/events", getCommuneEvents);
+//list
+router.get("/:communeid/lists", getCommuneListings);
+
+router.get("/:username", getUserCommunes);
+// Route to add a review to a commune
+router.post("/:communeid/reviews", validateToken, setCommuneReview);
+// POST route to create a new post (listing)
+router.post("/:communeid/listings", validateToken, createCommunePostListing);
+
+router.post("/create/:communeId/post", validateToken, createCommunePostBlog);
 
 router.post(
   "/create/:communeid/event",

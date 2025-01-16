@@ -194,10 +194,7 @@ const AllCommunes = () => {
       {reviewModalVisible && selectedCommune && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
-            <h2 className="text-xl font-bold mb-4">
-              Reviews for {selectedCommune.name}
-            </h2>
-            <ul className="space-y-4">
+            <ul className="space-y-4 h-96 overflow-auto">
               {reviewError && <p className="text-red-600">{reviewError}</p>}
               {reviews.length > 0 ? (
                 reviews.map((review, index) => (
