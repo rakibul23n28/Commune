@@ -6,26 +6,25 @@ import axios from "axios";
 import Layout from "../components/Layout";
 import CommuneNavbar from "../components/CommuneNavbar";
 import CommuneFixedNav from "../components/CommuneFixedNav";
-import QuillEditor from "../components/QuillEditor";
 
-const CreatePostPage = () => {
+const CreateEventPage = () => {
   const { user } = useAuth();
   const { communeid } = useParams();
   const { getRole, fetchCommuneData, communeData } = useCommuneMembership();
   const [commune, setCommune] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [links, setLinks] = useState("");
-  const [tags, setTags] = useState("");
+  const [eventName, setEventName] = useState("");
+  const [eventDescription, setEventDescription] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [eventImage, setEventImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
     const loadCommuneData = async () => {
       if (!communeData) {
         try {
-          await fetchCommuneData(communeid); // Fetch commune data from the context
-          console.log("Commune data fetched:", communeData); // Log after fetching data
+          await fetchCommuneData(communeid);
         } catch (err) {
           setErrorMessage(
             err.response?.data?.message || "Failed to load commune data"
@@ -37,70 +36,73 @@ const CreatePostPage = () => {
     };
 
     loadCommuneData();
-  }, [communeid, fetchCommuneData, communeData]); // Add communeData to the dependency array
+  }, [communeid, fetchCommuneData, communeData]);
 
   useEffect(() => {
     if (communeData) {
-      setCommune(communeData); // Update commune state after communeData has been fetched
+      setCommune(communeData);
     }
-  }, [communeData]); // Watch for changes in communeData and update state accordingly
+  }, [communeData]);
 
-  // Function to handle post creation
-  const handleCreatePost = async (e) => {
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    setEventImage(file);
+
+    if (file) {
+      setImagePreview(URL.createObjectURL(file));
+    } else {
+      setImagePreview(null);
+    }
+  };
+
+  const handleCreateEvent = async (e) => {
     e.preventDefault();
 
-    if (!title || !content) {
-      setErrorMessage("Title and content are required");
+    if (!eventName || !eventDescription || !eventDate) {
+      setErrorMessage("All fields are required");
       return;
     }
 
     try {
       const role = getRole(communeid);
       if (role) {
+        const formData = new FormData();
+        formData.append("eventName", eventName);
+        formData.append("eventDescription", eventDescription);
+        formData.append("eventDate", eventDate);
+        if (eventImage) {
+          formData.append("eventImage", eventImage);
+        }
+
         const response = await axios.post(
-          `/api/commune/create/${communeid}/post`,
-          {
-            title,
-            content,
-            links,
-            tags,
-          },
+          `/api/commune/create/${communeid}/event`,
+          formData,
           {
             headers: {
               Authorization: `Bearer ${user.token}`,
+              "Content-Type": "multipart/form-data",
             },
           }
         );
 
-        location.href = `/commune/${communeid}/posts`;
+        location.href = `/commune/${commune?.commune_id}`;
       } else {
         setErrorMessage(
-          "You must be a member of this commune to create a post."
+          "You must be a member of this commune to create an event."
         );
       }
     } catch (error) {
-      setErrorMessage("Error creating post. Please try again.");
-      console.error("Error creating post:", error);
+      setErrorMessage("Error creating event. Please try again.");
+      console.error("Error creating event:", error);
     }
   };
 
   if (loading) {
-    return (
-      <Layout>
-        <CommuneFixedNav />
-        <CommuneNavbar name={commune?.name} />
-        <div className="w-1/2 mx-auto p-6 bg-white rounded-lg shadow-md">
-          <div className="max-w-sm mx-auto mb-6 p-4 border rounded-lg shadow-md bg-white">
-            <h1 className="text-2xl font-semibold mb-2">Loading...</h1>
-          </div>
-        </div>
-      </Layout>
-    );
+    return <div>Loading commune data...</div>;
   }
 
   return (
     <Layout>
-      {/* Navbar */}
       <CommuneFixedNav />
       <CommuneNavbar name={commune?.name} />
       <div className="w-1/2 mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -121,92 +123,93 @@ const CreatePostPage = () => {
             </div>
           </div>
         )}
-        <h2 className="text-2xl font-bold mb-4">Create a Post</h2>
+        <h2 className="text-2xl font-bold mb-4">Create an Event</h2>
         {errorMessage && (
           <div className="text-red-500 mb-4">{errorMessage}</div>
         )}
         <div className="bg-white p-6 border rounded-lg shadow-md">
-          <form onSubmit={handleCreatePost}>
+          <form onSubmit={handleCreateEvent}>
             <div className="mb-4">
               <label
-                htmlFor="title"
+                htmlFor="eventName"
                 className="block text-sm font-medium text-gray-700"
               >
-                Title
+                Event Name
               </label>
               <input
-                id="title"
+                id="eventName"
                 type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={eventName}
+                onChange={(e) => setEventName(e.target.value)}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Post Title"
+                placeholder="Event Name"
                 required
               />
             </div>
 
             <div className="mb-4">
               <label className="block text-gray-700 font-medium mb-2">
-                Content
+                Event Description
               </label>
-              <div className="h-96 bg-gray-50 rounded-lg overflow-hidden shadow-inner">
-                <QuillEditor value={content} onChange={setContent} />
-              </div>
+              <textarea
+                value={eventDescription}
+                onChange={(e) => setEventDescription(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-300 focus:outline-none"
+                placeholder="Event Description"
+                rows="4"
+              ></textarea>
             </div>
 
             <div className="mb-4">
               <label
-                htmlFor="links"
+                htmlFor="eventDate"
                 className="block text-sm font-medium text-gray-700"
               >
-                Links (optional)
+                Event Date
               </label>
               <input
-                id="links"
-                type="text"
-                value={links}
-                onChange={(e) => setLinks(e.target.value)}
+                id="eventDate"
+                type="datetime-local"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Add any relevant links"
+                required
               />
             </div>
+
             <div className="mb-4">
               <label
-                htmlFor="tags"
+                htmlFor="eventImage"
                 className="block text-sm font-medium text-gray-700"
               >
-                Tags (optional)
+                Event Image
               </label>
               <input
-                id="tags"
-                type="text"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
+                id="eventImage"
+                name="eventImage"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Add tags, separated by commas"
               />
-              {tags && (
-                <div className="mt-2">
-                  <h3 className="text-sm font-medium text-gray-700">Tags:</h3>
-                  <div className="flex space-x-2 mt-1">
-                    {tags.split(",").map((tag, index) => (
-                      <span
-                        key={index}
-                        className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold py-1 px-2 rounded-full"
-                      >
-                        {tag.trim()}
-                      </span>
-                    ))}
-                  </div>
+              {imagePreview && (
+                <div className="mt-4">
+                  <p className="text-gray-700 text-sm mb-2">Image Preview:</p>
+                  <img
+                    src={imagePreview}
+                    alt="Event Preview"
+                    className="w-32 h-32 object-cover rounded-md"
+                  />
                 </div>
               )}
             </div>
+
             <div className="mb-4">
               <button
                 type="submit"
                 className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                Create Post
+                Create Event
               </button>
             </div>
           </form>
@@ -216,4 +219,4 @@ const CreatePostPage = () => {
   );
 };
 
-export default CreatePostPage;
+export default CreateEventPage;

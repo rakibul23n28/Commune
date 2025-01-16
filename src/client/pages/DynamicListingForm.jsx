@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Layout from "../components/Layout";
 import CommuneNavbar from "../components/CommuneNavbar";
 import CommuneFixedNav from "../components/CommuneFixedNav";
 import { getAuthHeaders } from "../utils/Helper";
 import { useParams } from "react-router-dom";
-import { set } from "lodash";
 
+import { useCommuneMembership } from "../context/CommuneMembershipContext";
 const DynamicListingForm = () => {
   const { communeid } = useParams();
   const [metaData, setMetaData] = useState({
@@ -19,6 +19,35 @@ const DynamicListingForm = () => {
   const [rows, setRows] = useState([]);
   const [tags, setTags] = useState("");
   const [columnMessage, setColumnMessage] = useState("");
+
+  const { getRole, fetchCommuneData, communeData } = useCommuneMembership();
+  const [commune, setCommune] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCommuneData = async () => {
+      if (!communeData) {
+        try {
+          await fetchCommuneData(communeid); // Fetch commune data from the context
+          console.log("Commune data fetched:", communeData); // Log after fetching data
+        } catch (err) {
+          setErrorMessage(
+            err.response?.data?.message || "Failed to load commune data"
+          );
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadCommuneData();
+  }, [communeid, fetchCommuneData, communeData]); // Add communeData to the dependency array
+
+  useEffect(() => {
+    if (communeData) {
+      setCommune(communeData); // Update commune state after communeData has been fetched
+    }
+  }, [communeData]); // Watch for changes in communeData and update state accordingly
 
   const handleMetaDataChange = (field, value) => {
     setMetaData((prev) => ({ ...prev, [field]: value }));
@@ -117,10 +146,14 @@ const DynamicListingForm = () => {
     }
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <Layout>
       <CommuneFixedNav />
-      <CommuneNavbar name={`Commune ${communeid}`} />
+      <CommuneNavbar name={`${commune?.name}`} />
       <div className="w-1/2 mx-auto p-6 bg-white rounded-lg shadow-md">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">
           Create a Dynamic Listing

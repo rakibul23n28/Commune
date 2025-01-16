@@ -19,6 +19,8 @@ import {
   getCommunePosts,
   createCommunePostListing,
   getCommuneListings,
+  getCommuneSmallInfo,
+  createCommuneEvent,
   // getCommunesByCommuneId,
 } from "../controllers/communeController.js";
 
@@ -69,6 +71,7 @@ router.get("/all", getAllCommunes);
 // router.get("/communes/c/:communeid", getCommunesByCommuneId);
 router.get("/joined/:userId", validateToken, getJoinedCommunes);
 router.get("/communes/:communeid", getUserCommunesByCommuneId);
+router.get("/communes/info/:communeid", getCommuneSmallInfo);
 router.get("/:commune_id/reviews", getCommuneReviews);
 router.get("/:communeid/posts", getCommunePosts);
 router.get("/:communeid/lists", getCommuneListings);
@@ -79,6 +82,38 @@ router.post("/:communeid/reviews", validateToken, setCommuneReview);
 router.post("/:communeid/listings", validateToken, createCommunePostListing);
 
 router.post("/create/:communeId/post", validateToken, createCommunePostBlog);
+
+// Configure Multer storage
+const storageEvent = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/commune_images/events/"); // Folder where the file will be stored
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname); // Get file extension
+    cb(null, req.user.id + "-" + Date.now() + ext); // Custom file naming
+  },
+});
+
+// Multer middleware for single file upload
+export const uploadEvent = multer({
+  storage: storageEvent,
+  limits: { fileSize: 10 * 1024 * 1024 }, // Limit file size to 10MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed (jpeg, png, jpg, gif)"));
+    }
+  },
+}).single("eventImage");
+
+router.post(
+  "/create/:communeid/event",
+  validateToken,
+  uploadEvent,
+  createCommuneEvent
+);
 router.post("/membership/:communeId/join", validateToken, joinCommune);
 router.delete("/delete/:communeid", validateToken, deleteCommune);
 

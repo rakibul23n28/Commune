@@ -368,6 +368,31 @@ export const deleteCommune = async (req, res) => {
   }
 };
 
+export const getCommuneSmallInfo = async (req, res) => {
+  const communeId = req.params.communeid;
+
+  try {
+    const [communes] = await pool.query(
+      "SELECT commune_id, name, commune_image FROM Communes WHERE commune_id = ?",
+      [communeId]
+    );
+
+    if (communes.length === 0) {
+      return res.status(404).json({ msg: "Commune not found" });
+    }
+
+    const commune = communes[0];
+
+    res.status(200).json({
+      success: true,
+      commune: commune,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Server error during commune retrieval" });
+  }
+};
+
 export const getCommuneUserStatus = async (req, res) => {
   const { communeId, userId } = req.params;
 
@@ -736,5 +761,54 @@ export const getCommuneListings = async (req, res) => {
   } catch (error) {
     console.error("Error fetching listings:", error);
     res.status(500).json({ error: "Error fetching listings" });
+  }
+};
+
+export const createCommuneEvent = async (req, res) => {
+  const { communeid } = req.params;
+  const { eventName, eventDescription, eventDate } = req.body;
+
+  if (!eventName || !eventDescription || !eventDate) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    // Check if the user is a member of the commune
+    const [membership] = await pool.query(
+      "SELECT role FROM commune_memberships WHERE commune_id = ? AND user_id = ?",
+      [communeid, req.user.id]
+    );
+
+    if (!membership.length) {
+      return res
+        .status(403)
+        .json({ message: "You must be a member to create an event." });
+    }
+    const image = `/uploads/commune_images/events/${req.file.filename}`;
+    const eventImage = image;
+
+    // Insert the event into the database
+    const [result] = await pool.query(
+      `INSERT INTO events (commune_id, event_name, event_description, event_date, event_image, created_by)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        communeid,
+        eventName,
+        eventDescription,
+        eventDate,
+        eventImage,
+        req.user.id,
+      ]
+    );
+
+    res.status(201).json({
+      message: "Event created successfully",
+      eventId: result.insertId,
+    });
+  } catch (error) {
+    console.error("Error creating event:", error);
+    res
+      .status(500)
+      .json({ message: "Error creating event. Please try again." });
   }
 };

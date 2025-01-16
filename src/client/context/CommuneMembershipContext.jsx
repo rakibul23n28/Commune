@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext } from "react";
-import { getAuthHeaders } from "../utils/Helper.js";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
@@ -8,9 +7,25 @@ const CommuneMembershipContext = createContext();
 
 export const CommuneMembershipProvider = ({ children }) => {
   const [membershipStatus, setMembershipStatus] = useState({});
-
+  const [communeData, setCommuneData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
+  // Fetch the commune data from the server
+  const fetchCommuneData = async (communeId) => {
+    try {
+      const response = await axios.get(
+        `/api/commune/communes/info/${communeId}`
+      );
+      setCommuneData(response.data.commune); // Update commune data state
+    } catch (error) {
+      console.error("Error fetching commune data:", error);
+    } finally {
+      setLoading(false); // Set loading to false once the request is complete
+    }
+  };
+
+  // Fetch membership status for a user in a specific commune
   const fetchMembershipStatus = async (communeId, userId) => {
     try {
       const response = await axios.get(
@@ -80,6 +95,9 @@ export const CommuneMembershipProvider = ({ children }) => {
     <CommuneMembershipContext.Provider
       value={{
         membershipStatus,
+        fetchCommuneData, // Expose fetchCommuneData function
+        communeData,
+        loading, // Expose loading state
         fetchMembershipStatus,
         updateMembership,
         joinCommune, // Added joinCommune method

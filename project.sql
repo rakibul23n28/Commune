@@ -102,12 +102,14 @@ CREATE TABLE comments (
 CREATE TABLE events (
     event_id INT AUTO_INCREMENT PRIMARY KEY,
     commune_id INT NOT NULL,
+    created_by INT NOT NULL,
     event_name VARCHAR(255) NOT NULL,
     event_image VARCHAR(255),
     event_description TEXT,
     event_date TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (commune_id) REFERENCES communes(commune_id) ON DELETE CASCADE
+    FOREIGN KEY (commune_id) REFERENCES communes(commune_id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 -- Table for Commune Collaborations

@@ -14,12 +14,17 @@ import EditCommune from "./pages/EditCommune";
 import ViewCommune from "./pages/ViewCommune";
 import AllCommunes from "./pages/AllCommunes";
 import UserCommunes from "./pages/UserCommunes";
-
+//posts
 import CreatePostPage from "./pages/CreatePostPage";
 import CommunePostsPage from "./pages/CommunePostsPage";
 
+//lists
 import DynamicListingForm from "./pages/DynamicListingForm";
 import CommuneListsPage from "./pages/CommuneListsPage";
+
+//event
+import CreateEvent from "./pages/CreateEvent";
+
 //utils
 import RedirectIfAuthenticated from "./utils/RedirectIfAuthenticated";
 
@@ -83,6 +88,16 @@ const App = () => (
             <ProtectedRoute>
               <CommuneMembershipProvider>
                 <DynamicListingForm />
+              </CommuneMembershipProvider>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/commune/create/:communeid/event"
+          element={
+            <ProtectedRoute>
+              <CommuneMembershipProvider>
+                <CreateEvent />
               </CommuneMembershipProvider>
             </ProtectedRoute>
           }

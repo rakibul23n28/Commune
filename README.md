@@ -19,7 +19,7 @@ Follow these steps to get the project up and running locally.
 Clone the repository to your local machine using Git:
 
 ```bash
-git clone https://github.com/yourusername/commune-website.git
+git clone "https://github.com/rakibul23n28/Commune.git"
 ```
 
 2. Install dependencies

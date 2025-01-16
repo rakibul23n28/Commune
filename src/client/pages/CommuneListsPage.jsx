@@ -5,12 +5,41 @@ import CommuneNavbar from "../components/CommuneNavbar";
 import CommuneFixedNav from "../components/CommuneFixedNav";
 import { useParams } from "react-router-dom";
 import { getAuthHeaders } from "../utils/Helper";
+import { useCommuneMembership } from "../context/CommuneMembershipContext";
 
 const CommuneListsPage = () => {
   const { communeid } = useParams();
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { getRole, fetchCommuneData, communeData } = useCommuneMembership();
+  const [commune, setCommune] = useState(null);
+  const [communeloading, setCommuneloading] = useState(true);
+
+  useEffect(() => {
+    const loadCommuneData = async () => {
+      if (!communeData) {
+        try {
+          await fetchCommuneData(communeid); // Fetch commune data from the context
+          console.log("Commune data fetched:", communeData); // Log after fetching data
+        } catch (err) {
+          setErrorMessage(
+            err.response?.data?.message || "Failed to load commune data"
+          );
+        } finally {
+          setCommuneloading(false);
+        }
+      }
+    };
+
+    loadCommuneData();
+  }, [communeid, fetchCommuneData, communeData]); // Add communeData to the dependency array
+
+  useEffect(() => {
+    if (communeData) {
+      setCommune(communeData); // Update commune state after communeData has been fetched
+    }
+  }, [communeData]); // Watch for changes in communeData and update state accordingly
 
   // Helper to transform rows
   const transformRows = (columns, rawRows) => {
@@ -53,11 +82,11 @@ const CommuneListsPage = () => {
     fetchLists();
   }, [communeid]);
 
-  if (loading) {
+  if (loading && communeloading) {
     return (
       <Layout>
         <CommuneFixedNav />
-        <CommuneNavbar name={`Commune ${communeid}`} />
+        <CommuneNavbar name={`${commune?.name}`} />
         <div className="w-full text-center py-20 text-gray-500">Loading...</div>
       </Layout>
     );
@@ -67,7 +96,7 @@ const CommuneListsPage = () => {
     return (
       <Layout>
         <CommuneFixedNav />
-        <CommuneNavbar name={`Commune ${communeid}`} />
+        <CommuneNavbar name={`${commune?.name}`} />
         <div className="w-full text-center py-20 text-red-500">{error}</div>
       </Layout>
     );
@@ -76,7 +105,7 @@ const CommuneListsPage = () => {
   return (
     <Layout>
       <CommuneFixedNav />
-      <CommuneNavbar name={`Commune ${communeid}`} />
+      <CommuneNavbar name={`${commune?.name}`} />
       <div className="w-8/12 mx-auto p-6 bg-white rounded-lg shadow-md mt-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
           Lists for Commune {communeid}
