@@ -38,6 +38,8 @@ import {
   // getCommunesByCommuneId,
   //collaboration
   getCollaborationPosts,
+  getCollaborationLists,
+  deleteCollaboration,
 } from "../controllers/communeController.js";
 
 import { validateToken } from "../middleware/auth.js";
@@ -129,6 +131,9 @@ router.delete("/list/:listid", validateToken, deleteCommuneListing);
 
 //collaboration
 router.get("/collaboration/:communeid/posts", getCollaborationPosts);
+router.get("/collaboration/:communeid/lists", getCollaborationLists);
+
+router.delete("/collaboration/:postid", validateToken, deleteCollaboration);
 
 router.get("/:commune_id/reviews", getCommuneReviews);
 router.get("/:communeid/posts", getCommunePosts);

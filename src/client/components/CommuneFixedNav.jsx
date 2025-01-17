@@ -1,9 +1,7 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import { useCommuneMembership } from "../context/CommuneMembershipContext";
 import { useAuth } from "../context/AuthContext";
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
 import axios from "axios";
 
 const FixedButtons = () => {
@@ -13,14 +11,14 @@ const FixedButtons = () => {
     useCommuneMembership();
 
   const [hover, setHover] = useState(false);
+  const [showCollaborationOptions, setShowCollaborationOptions] =
+    useState(false); // State to toggle collaboration options
   const [error, setError] = useState(null);
+
   useEffect(() => {
     const fetchUserMembership = async () => {
       try {
-        const membershipStatus = await fetchMembershipStatus(
-          communeid,
-          user?.id
-        );
+        await fetchMembershipStatus(communeid, user?.id);
       } catch (err) {
         setError(
           err.response?.data?.message || "Failed to fetch membership status"
@@ -39,7 +37,7 @@ const FixedButtons = () => {
   };
 
   const handleJoinCommune = async () => {
-    if (user == null) {
+    if (!user) {
       location.href = "/login";
       return;
     }
@@ -52,15 +50,45 @@ const FixedButtons = () => {
       setError(err.response?.data?.message || "Failed to join commune.");
     }
   };
+
+  const toggleCollaborationOptions = () => {
+    setShowCollaborationOptions(!showCollaborationOptions);
+  };
+
   const canCreateEvent =
     getRole(communeid) === "admin" || getRole(communeid) === "moderator";
+
   return (
     <div className="fixed left-4 top-1/4 flex flex-col space-y-4">
-      <Link to={`/commune/${communeid}/collaboration`}>
-        <button className="bg-emerald-500 text-white rounded-full px-4 py-2 hover:bg-red-600 shadow-lg">
-          Collaboration
-        </button>
-      </Link>
+      {/* Collaboration Button */}
+      <div
+        onClick={toggleCollaborationOptions}
+        className="bg-emerald-500 text-white rounded-full px-4 py-2 hover:bg-red-600 shadow-lg relative"
+      >
+        Collaboration
+        {/* Collaboration Options */}
+        {showCollaborationOptions && (
+          <div className="absolute top-0 flex gap-1 left-36">
+            <Link to={`/commune/${communeid}/collaboration/posts`}>
+              <button className="bg-blue-500 text-white rounded-full px-4 py-2 hover:bg-blue-600 shadow-lg">
+                Posts
+              </button>
+            </Link>
+            <Link to={`/commune/${communeid}/collaboration/lists`}>
+              <button className="bg-green-500 text-white rounded-full px-4 py-2 hover:bg-green-600 shadow-lg">
+                Lists
+              </button>
+            </Link>
+            <Link to={`/commune/${communeid}/collaboration/events`}>
+              <button className="bg-red-500 text-white rounded-full px-4 py-2 hover:bg-red-600 shadow-lg">
+                Events
+              </button>
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {/* General Options */}
       <Link to={`/commune/${communeid}/posts`}>
         <button className="bg-blue-500 text-white rounded-full px-4 py-2 hover:bg-blue-600 shadow-lg">
           Posts

@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useCommuneMembership } from "../context/CommuneMembershipContext";
+import { useAuth } from "../context/AuthContext";
 
 const CommuneNavbar = ({ name = "" }) => {
   // Default name to an empty string
@@ -7,11 +9,34 @@ const CommuneNavbar = ({ name = "" }) => {
   const { communeid } = useParams(); // Get the commune ID from the URL
   const [searchQuery, setSearchQuery] = useState(""); // To manage the search input
 
+  const { fetchMembershipStatus } = useCommuneMembership();
+  const [membershipStatus, setMembershipStatus] = useState(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchUserMembership = async () => {
+      try {
+        const membership = await fetchMembershipStatus(communeid, user?.id);
+        setMembershipStatus(membership);
+      } catch (err) {
+        setError(
+          err.response?.data?.message || "Failed to fetch membership status"
+        );
+      }
+    };
+
+    if (communeid && user?.id) {
+      fetchUserMembership();
+    }
+  }, [communeid, user?.id]);
+
   const handleNavigation = (option) => {
     if (option === "profile") {
       navigate(`/commune/${communeid}`);
-    } else if (option === "otherCommunes") {
-      navigate(`/communes`);
+    } else if (option === "sentRequests") {
+      navigate(`/communes/${communeid}/sent-requests`);
+    } else if (option === "receivedRequests") {
+      navigate(`/communes/${communeid}/received-requests`);
     } else if (option === "settings") {
       navigate(`/commune/${communeid}/settings`);
     }
@@ -34,21 +59,32 @@ const CommuneNavbar = ({ name = "" }) => {
             <i className="fas fa-user mr-2"></i>
             {name.length > 30 ? `${name.slice(0, 30)}...` : name}
           </button>
-
-          <button
-            onClick={() => handleNavigation("otherCommunes")}
-            className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
-          >
-            <i className="fas fa-users mr-2"></i>
-            Collaboration
-          </button>
-          <button
-            onClick={() => handleNavigation("settings")}
-            className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
-          >
-            <i className="fas fa-cog mr-2"></i>
-            Settings
-          </button>
+          {(membershipStatus === "admin" ||
+            membershipStatus === "moderator") && (
+            <>
+              <button
+                onClick={() => handleNavigation("sentRequests")}
+                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
+              >
+                <i className="fas fa-paper-plane mr-2"></i>
+                Sent Requests
+              </button>
+              <button
+                onClick={() => handleNavigation("receivedRequests")}
+                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
+              >
+                <i className="fas fa-envelope mr-2"></i>
+                Received Requests
+              </button>
+              <button
+                onClick={() => handleNavigation("settings")}
+                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
+              >
+                <i className="fas fa-cog mr-2"></i>
+                Settings
+              </button>
+            </>
+          )}
         </div>
         <form onSubmit={handleSearch} className="flex items-center space-x-2">
           <input

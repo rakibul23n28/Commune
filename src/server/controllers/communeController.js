@@ -831,6 +831,7 @@ export const getCommuneListings = async (req, res) => {
             links: post.links,
             tags: post.tags,
             post_id: post.post_id,
+            user_id: post.user_id,
           },
           columns,
           rows,
@@ -1210,6 +1211,93 @@ export const getCollaborationPosts = async (req, res) => {
     res.status(200).json({ posts });
   } catch (error) {
     console.error("Error fetching collaborations:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+export const getCollaborationLists = async (req, res) => {
+  const { communeid } = req.params;
+
+  try {
+    const [collaborations] = await pool.query(
+      "SELECT commune_id_1 FROM collaborations_post WHERE commune_id_2 = ?",
+      [communeid]
+    );
+    const uniqueCommuneIds = Array.from(
+      new Set(collaborations.map((c) => c.commune_id_1))
+    );
+
+    // Step 3: Fetch all posts for the unique commune IDs
+    const [posts] = await pool.query(
+      "SELECT * FROM posts WHERE post_type = 'listing' AND commune_id IN (?)",
+      [uniqueCommuneIds]
+    );
+
+    if (posts.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No posts found for collaborations." });
+    }
+    const listings = await Promise.all(
+      posts.map(async (post) => {
+        const [attributes] = await pool.query(
+          "SELECT attributes FROM post_attributes WHERE post_id = ?",
+          [post.post_id]
+        );
+
+        // Safeguard against parsing issues
+        const parsedAttributes = attributes.map((attr) => {
+          if (typeof attr.attributes === "string") {
+            return JSON.parse(attr.attributes);
+          }
+          return attr.attributes; // Already an object
+        });
+
+        // Columns are the names of the attributes
+        const columns = parsedAttributes.map((attr) => ({
+          attribute_name: attr.attribute_name || "Unnamed Attribute", // Default if `attribute_name` is missing
+          attribute_type: attr.attribute_type || "Unknown Type", // Default if `attribute_type` is missing
+        }));
+
+        // Rows: Each row is an object with attribute names as keys and values for each person
+        const rows = parsedAttributes.map((attr) => ({
+          [attr.attribute_name]: Array.isArray(attr.attribute_value)
+            ? attr.attribute_value.join(", ") // Join array values with a comma
+            : attr.attribute_value || "No Value", // If not an array, use the value or fallback
+        }));
+
+        return {
+          metaData: {
+            title: post.title,
+            description: post.content,
+            links: post.links,
+            tags: post.tags,
+            post_id: post.post_id,
+            user_id: post.user_id,
+          },
+          columns,
+          rows,
+        };
+      })
+    );
+
+    res.status(200).json(listings);
+  } catch (error) {
+    console.error("Error fetching collaborations:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const deleteCollaboration = async (req, res) => {
+  const { postid } = req.params;
+
+  try {
+    await pool.query("DELETE FROM collaborations_post WHERE post_id = ?", [
+      postid,
+    ]);
+
+    res.status(200).json({ message: "Collaboration request deleted." });
+  } catch (error) {
+    console.error("Error deleting collaboration:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 };

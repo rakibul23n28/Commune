@@ -127,16 +127,6 @@ const ViewCommune = () => {
       </Layout>
     );
   }
-
-  if (error) {
-    return (
-      <Layout>
-        <div className="w-full flex justify-center items-center h-96">
-          <p className="text-red-500">{error}</p>
-        </div>
-      </Layout>
-    );
-  }
   const canCreateEvent =
     getRole(communeid) === "admin" || getRole() === "moderator";
 

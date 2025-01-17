@@ -8,7 +8,7 @@ import { getAuthHeaders } from "../utils/Helper";
 import { useCommuneMembership } from "../context/CommuneMembershipContext";
 import { useAuth } from "../context/AuthContext";
 
-const CommuneListsPage = () => {
+const CollaborationListPage = () => {
   const { communeid } = useParams();
   const { user } = useAuth();
   const [lists, setLists] = useState([]);
@@ -17,9 +17,6 @@ const CommuneListsPage = () => {
   const { getRole, communeData, fetchCommuneData } = useCommuneMembership();
   const [commune, setCommune] = useState(null);
   const [showOptions, setShowOptions] = useState({});
-  const [showCollaboration, setShowCollaboration] = useState(false);
-  const [userCommunes, setUserCommunes] = useState([]);
-  const [selectedPostId, setSelectedPostId] = useState(null);
 
   useEffect(() => {
     const loadCommuneData = async () => {
@@ -62,14 +59,17 @@ const CommuneListsPage = () => {
   useEffect(() => {
     const fetchLists = async () => {
       setLoading(true);
+
       try {
-        const response = await axios.get(`/api/commune/${communeid}/lists`, {
-          headers: getAuthHeaders(),
-        });
+        const response = await axios.get(
+          `/api/commune/collaboration/${communeid}/lists`
+        );
+
         const transformedLists = response.data.map((list) => ({
           ...list,
           rows: transformRows(list.columns, list.rows),
         }));
+
         setLists(transformedLists);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to fetch lists.");
@@ -103,52 +103,6 @@ const CommuneListsPage = () => {
       console.error("Error deleting list:", error);
       alert("Error deleting list. Please try again.");
     }
-  };
-  const fetchUserCommunes = async () => {
-    try {
-      const response = await axios.get(
-        `/api/user/communes/info/${user.id}?commune_id=${communeid}`
-      );
-      setUserCommunes(response.data.communes);
-    } catch (error) {
-      console.error("Error fetching user communes:", error);
-    }
-  };
-
-  const makeCollaboration = async (commune_id_2, post_id) => {
-    try {
-      const response = await axios.post(
-        `/api/commune/collaboration/post`,
-        {
-          commune_id_1: communeid, // Current commune ID
-          commune_id_2, // Selected commune ID
-          post_id,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
-      alert(response.data.message);
-      setShowCollaboration(false);
-    } catch (error) {
-      console.error("Error creating collaboration:", error);
-      alert(
-        error.response?.data?.message ||
-          "Failed to create collaboration. Please try again."
-      );
-    }
-  };
-
-  const handleCollaborationClick = (post_id) => {
-    setSelectedPostId(post_id); // Set the selected post ID
-    fetchUserCommunes();
-    setShowCollaboration(true);
-  };
-
-  const closeCollaborationPopup = () => {
-    setShowCollaboration(false);
   };
 
   if (loading) {
@@ -197,46 +151,26 @@ const CommuneListsPage = () => {
                   </Link>
                 </h2>
                 <div className="flex relative">
-                  {/* Three dot options */}
-                  {(getRole(communeid) === "admin" ||
-                    user?.id === list.metaData.user_id) && (
-                    <div className="flex">
+                  <button
+                    onClick={() => handleOptionsClick(list.metaData.post_id)}
+                    className="text-gray-600 hover:text-gray-800 p-2"
+                  >
+                    <i className="fas fa-ellipsis-v"></i>
+                  </button>
+                  {showOptions === list.metaData.post_id && (
+                    <div className="absolute right-0 mt-10 w-48 bg-white border rounded-lg shadow-lg z-1">
                       <button
-                        onClick={() =>
-                          handleCollaborationClick(list.metaData.post_id)
-                        }
-                        className="text-green-500 hover:text-green-700 p-2"
+                        onClick={() => handleEdit(list.metaData.post_id)}
+                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
                       >
-                        Collaboration
+                        Edit
                       </button>
-                      <div className="flex relative">
-                        <button
-                          onClick={() =>
-                            handleOptionsClick(list.metaData.post_id)
-                          }
-                          className="text-gray-600 hover:text-gray-800 p-2"
-                        >
-                          <i className="fas fa-ellipsis-v"></i>
-                        </button>
-                        {showOptions === list.metaData.post_id && (
-                          <div className="absolute right-0 mt-10 w-48 bg-white border rounded-lg shadow-lg z-10">
-                            <button
-                              onClick={() => handleEdit(list.metaData.post_id)}
-                              className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleDelete(list.metaData.post_id)
-                              }
-                              className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        onClick={() => handleDelete(list.metaData.post_id)}
+                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                      >
+                        Delete
+                      </button>
                     </div>
                   )}
                 </div>
@@ -308,60 +242,8 @@ const CommuneListsPage = () => {
           ))
         )}
       </div>
-      {/* Collaboration Popup */}
-      {showCollaboration && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-96 overflow-y-auto relative">
-            <button
-              onClick={closeCollaborationPopup}
-              className="absolute top-3 right-3 bg-red-500 text-white px-4 py-2 rounded-full text-sm hover:bg-red-600 transition duration-200"
-            >
-              Close
-            </button>
-            <h2 className="text-xl font-bold mb-4">
-              Collaborate this post with your communes
-            </h2>
-            {userCommunes.length > 0 ? (
-              <ul className="space-y-4">
-                {userCommunes.map((commune) => (
-                  <li
-                    key={commune.commune_id}
-                    className="flex justify-between space-x-4 shadow p-2 rounded"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex space-x-4">
-                        <img
-                          src={commune.commune_image || "/default-commune.png"}
-                          alt={commune.commune_name}
-                          className="w-10 h-10 rounded-full"
-                        />
-                        <p className="text-lg font-medium">
-                          {commune.commune_name} ({commune.role})
-                        </p>
-                      </div>
-                      <h2>{commune.description}</h2>
-                    </div>
-                    <div className="flex space-x-4">
-                      <button
-                        onClick={() =>
-                          makeCollaboration(commune.commune_id, selectedPostId)
-                        }
-                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                      >
-                        Collaborate
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-500">No communes found.</p>
-            )}
-          </div>
-        </div>
-      )}
     </Layout>
   );
 };
 
-export default CommuneListsPage;
+export default CollaborationListPage;

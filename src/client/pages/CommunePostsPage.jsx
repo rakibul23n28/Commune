@@ -168,7 +168,7 @@ const CommunePostsPage = () => {
                   </div>
                   {/* Three dot options */}
                   {(getRole(communeid) === "admin" ||
-                    user.id === post.user_id) && (
+                    user?.id === post.user_id) && (
                     <div className="flex">
                       <button
                         onClick={() => handleCollaborationClick(post.post_id)}

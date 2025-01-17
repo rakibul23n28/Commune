@@ -84,7 +84,7 @@ function Navbar() {
             title="Commune"
             to="/commune"
             icon="fas fa-layer-group"
-            isActive={isActive("/communes")}
+            isActive={isActive("/commune")}
           />
           <LinkBar
             title="Market"

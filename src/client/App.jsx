@@ -33,7 +33,8 @@ import CommuneEventsPage from "./pages/CommuneEventsPage";
 import EditEventPage from "./pages/EditEventPage";
 
 //collaboration
-import CollaborationPage from "./pages/CollaborationPage";
+import CollaborationPostPage from "./pages/CollaborationPostPage";
+import CollaborationListPage from "./pages/CollaborationListPage";
 // Utils
 import RedirectIfAuthenticated from "./utils/RedirectIfAuthenticated";
 import AdminModeratorProtected from "./utils/AdminModeratorProtected";
@@ -61,8 +62,12 @@ const App = () => (
                   element={<CommuneEventsPage />}
                 />
                 <Route
-                  path=":communeid/collaboration"
-                  element={<CollaborationPage />}
+                  path=":communeid/collaboration/posts"
+                  element={<CollaborationPostPage />}
+                />
+                <Route
+                  path=":communeid/collaboration/lists"
+                  element={<CollaborationListPage />}
                 />
                 <Route
                   path="create/:communeid/post"
