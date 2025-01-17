@@ -29,7 +29,6 @@ const DynamicListingForm = () => {
       if (!communeData) {
         try {
           await fetchCommuneData(communeid); // Fetch commune data from the context
-          console.log("Commune data fetched:", communeData); // Log after fetching data
         } catch (err) {
           setErrorMessage(
             err.response?.data?.message || "Failed to load commune data"
@@ -154,7 +153,7 @@ const DynamicListingForm = () => {
     <Layout>
       <CommuneFixedNav />
       <CommuneNavbar name={`${commune?.name}`} />
-      <div className="w-1/2 mx-auto p-6 bg-white rounded-lg shadow-md">
+      <div className="w-10/12 mx-auto p-6 bg-white rounded-lg shadow-md">
         <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">
           Create a Dynamic Listing
         </h1>

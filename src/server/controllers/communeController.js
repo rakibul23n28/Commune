@@ -648,11 +648,11 @@ export const getCommunePosts = async (req, res) => {
       SELECT p.post_id, p.title, p.content, p.created_at, u.username, u.profile_image , p.user_id, p.links
       FROM posts p
       JOIN users u ON p.user_id = u.user_id
-      WHERE p.commune_id = ?
+      WHERE p.commune_id = ? AND p.post_type = "blog"
       ORDER BY p.created_at DESC
     `;
 
-    const results = await pool.query(query, [communeid]);
+    const [results] = await pool.query(query, [communeid]);
 
     res.json({ posts: results });
   } catch (error) {
@@ -897,6 +897,78 @@ export const getCommuneListing = async (req, res) => {
   }
 };
 
+export const deleteCommuneListing = async (req, res) => {
+  const { listid } = req.params;
+
+  try {
+    await pool.query("DELETE FROM post_attributes WHERE post_id = ?", [listid]);
+    await pool.query("DELETE FROM posts WHERE post_id = ?", [listid]);
+
+    res.status(200).json({ message: "Listing deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting listing:", error);
+    res.status(500).json({ error: "Error deleting listing" });
+  }
+};
+export const updateCommuneListing = async (req, res) => {
+  const { listid } = req.params;
+  const { metaData, data } = req.body;
+
+  try {
+    // Step 1: Update the post metadata
+    await pool.query(
+      "UPDATE posts SET title = ?, content = ?, links = ?, tags = ? WHERE post_id = ?",
+      [
+        metaData.title,
+        metaData.description,
+        metaData.links,
+        metaData.tags,
+        listid,
+      ]
+    );
+
+    // Step 2: Retrieve existing attributes for the post
+    const [existingAttributes] = await pool.query(
+      "SELECT * FROM post_attributes WHERE post_id = ?",
+      [listid]
+    );
+
+    // Step 3: Update existing attributes or insert new ones
+    for (let i = 0; i < data.length; i++) {
+      if (existingAttributes[i]) {
+        // Update existing attribute
+        await pool.query(
+          "UPDATE post_attributes SET attributes = ? WHERE attribute_id = ?",
+          [JSON.stringify(data[i]), existingAttributes[i].attribute_id]
+        );
+      } else {
+        // Insert new attribute if not enough existing rows
+        await pool.query(
+          "INSERT INTO post_attributes (post_id, attributes) VALUES (?, ?)",
+          [listid, JSON.stringify(data[i])]
+        );
+      }
+    }
+
+    // Step 4: Remove any extra attributes that are no longer needed
+    if (data.length < existingAttributes.length) {
+      const excessAttributeIds = existingAttributes
+        .slice(data.length)
+        .map((attr) => attr.attribute_id);
+
+      await pool.query(
+        "DELETE FROM post_attributes WHERE attribute_id IN (?)",
+        [excessAttributeIds]
+      );
+    }
+
+    res.status(200).json({ message: "Listing updated successfully" });
+  } catch (error) {
+    console.error("Error updating listing:", error);
+    res.status(500).json({ error: "Error updating listing" });
+  }
+};
+
 export const createCommuneEvent = async (req, res) => {
   const { communeid } = req.params;
   const { eventName, eventDescription, eventDate } = req.body;
@@ -1109,6 +1181,35 @@ export const collaborationPost = async (req, res) => {
     res.status(201).json({ message: "Collaboration request created." });
   } catch (error) {
     console.error("Error creating collaboration:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const getCollaborationPosts = async (req, res) => {
+  const { communeid } = req.params;
+
+  try {
+    const [collaborations] = await pool.query(
+      "SELECT post_id FROM collaborations_post WHERE  commune_id_2 = ?",
+      [communeid]
+    );
+
+    if (collaborations.length === 0) {
+      return res.status(404).json({ message: "No collaborations found." });
+    }
+
+    // Fetch the post details for each collaboration
+    const postIds = collaborations.map(
+      (collaboration) => collaboration.post_id
+    );
+    const [posts] = await pool.query(
+      "SELECT post_id, title, content, links, tags, posts.created_at, username, profile_image FROM posts JOIN users ON posts.user_id = users.user_id WHERE post_id IN (?)",
+      [postIds]
+    );
+
+    res.status(200).json({ posts });
+  } catch (error) {
+    console.error("Error fetching collaborations:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 };

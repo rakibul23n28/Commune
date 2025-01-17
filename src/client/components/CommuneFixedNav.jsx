@@ -13,30 +13,25 @@ const FixedButtons = () => {
     useCommuneMembership();
 
   const [hover, setHover] = useState(false);
-  const [hasFetched, setHasFetched] = useState(false);
-  const [membership, setMembership] = useState(null);
   const [error, setError] = useState(null);
   useEffect(() => {
     const fetchUserMembership = async () => {
       try {
         const membershipStatus = await fetchMembershipStatus(
           communeid,
-          user.id
+          user?.id
         );
-        setMembership(membershipStatus);
       } catch (err) {
         setError(
           err.response?.data?.message || "Failed to fetch membership status"
         );
-      } finally {
-        setHasFetched(true);
       }
     };
 
     if (communeid && user?.id) {
       fetchUserMembership();
     }
-  }, [communeid, user.id]);
+  }, [communeid, user?.id]);
 
   const handleActionClick = (action) => {
     location.href = `/commune/create/${communeid}/${action}`;
@@ -50,7 +45,7 @@ const FixedButtons = () => {
     }
 
     try {
-      await joinCommune(communeid, user.id);
+      await joinCommune(communeid, user?.id);
       alert("You have successfully joined the commune!");
       window.location.reload(); // Refresh to update membership status
     } catch (err) {
@@ -61,6 +56,11 @@ const FixedButtons = () => {
     getRole(communeid) === "admin" || getRole(communeid) === "moderator";
   return (
     <div className="fixed left-4 top-1/4 flex flex-col space-y-4">
+      <Link to={`/commune/${communeid}/collaboration`}>
+        <button className="bg-emerald-500 text-white rounded-full px-4 py-2 hover:bg-red-600 shadow-lg">
+          Collaboration
+        </button>
+      </Link>
       <Link to={`/commune/${communeid}/posts`}>
         <button className="bg-blue-500 text-white rounded-full px-4 py-2 hover:bg-blue-600 shadow-lg">
           Posts

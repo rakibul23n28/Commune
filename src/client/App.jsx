@@ -25,12 +25,15 @@ import ViewPostPage from "./pages/ViewPostPage";
 import DynamicListingForm from "./pages/DynamicListingForm";
 import CommuneListsPage from "./pages/CommuneListsPage";
 import ViewListPage from "./pages/ViewListPage";
+import EditListingForm from "./pages/EditListingForm";
 
 // Events
 import CreateEvent from "./pages/CreateEvent";
 import CommuneEventsPage from "./pages/CommuneEventsPage";
 import EditEventPage from "./pages/EditEventPage";
 
+//collaboration
+import CollaborationPage from "./pages/CollaborationPage";
 // Utils
 import RedirectIfAuthenticated from "./utils/RedirectIfAuthenticated";
 import AdminModeratorProtected from "./utils/AdminModeratorProtected";
@@ -56,6 +59,10 @@ const App = () => (
                 <Route
                   path=":communeid/events"
                   element={<CommuneEventsPage />}
+                />
+                <Route
+                  path=":communeid/collaboration"
+                  element={<CollaborationPage />}
                 />
                 <Route
                   path="create/:communeid/post"
@@ -96,10 +103,22 @@ const App = () => (
                   path="edit/:communeid/:eventid/event"
                   element={
                     <ProtectedRoute>
-                      <EditEventPage />
+                      <AdminModeratorProtected>
+                        <EditEventPage />
+                      </AdminModeratorProtected>
                     </ProtectedRoute>
                   }
                 />
+
+                <Route
+                  path="edit/:communeid/:listid/list"
+                  element={
+                    <ProtectedRoute>
+                      <EditListingForm />
+                    </ProtectedRoute>
+                  }
+                />
+
                 <Route
                   path="/:communeid/post/:postid"
                   element={<ViewPostPage />}

@@ -38,7 +38,6 @@ const ViewListPage = () => {
           headers: getAuthHeaders(),
         });
         // Transform rows before setting them
-        console.log(response);
 
         const transformedList = {
           ...response.data,

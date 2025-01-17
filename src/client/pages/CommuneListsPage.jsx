@@ -14,8 +14,28 @@ const CommuneListsPage = () => {
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { getRole, communeData } = useCommuneMembership();
+  const { getRole, communeData, fetchCommuneData } = useCommuneMembership();
+  const [commune, setCommune] = useState(null);
   const [showOptions, setShowOptions] = useState({});
+
+  useEffect(() => {
+    const loadCommuneData = async () => {
+      try {
+        if (!communeData) {
+          await fetchCommuneData(communeid);
+        }
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to load commune data");
+      }
+    };
+    loadCommuneData();
+  }, [communeid, communeData]);
+
+  useEffect(() => {
+    if (communeData) {
+      setCommune(communeData);
+    }
+  }, [communeData]);
 
   // Helper to transform rows
   const transformRows = (columns, rawRows) => {
@@ -38,40 +58,48 @@ const CommuneListsPage = () => {
 
   useEffect(() => {
     const fetchLists = async () => {
+      setLoading(true);
       try {
         const response = await axios.get(`/api/commune/${communeid}/lists`, {
           headers: getAuthHeaders(),
         });
-        // Transform rows before setting them
         const transformedLists = response.data.map((list) => ({
           ...list,
           rows: transformRows(list.columns, list.rows),
         }));
         setLists(transformedLists);
       } catch (err) {
-        setError("Failed to fetch lists.");
+        setError(err.response?.data?.message || "Failed to fetch lists.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchLists();
   }, [communeid]);
 
-  // Update the function to show or hide options for a specific list
   const handleOptionsClick = (listId) => {
-    setShowOptions((prevShowOptions) => ({
-      ...prevShowOptions,
-      [listId]: prevShowOptions[listId] ? false : true, // Toggle visibility
-    }));
+    setShowOptions((prev) => (prev === listId ? null : listId)); // Toggle visibility of options
   };
 
-  const handleEditPost = (postId) => {
-    // Implement edit post logic
+  const handleEdit = (listId) => {
+    location.href = `/commune/edit/${communeid}/${listId}/list`;
   };
 
-  const handleDeletePost = (postId) => {
-    // Implement delete post logic
+  const handleDelete = async (listId) => {
+    if (!window.confirm("Are you sure you want to delete this list?")) return;
+    try {
+      await axios.delete(`/api/commune/list/${listId}`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+      setLists((prevLists) =>
+        prevLists.filter((list) => list.metaData.post_id !== listId)
+      );
+    } catch (error) {
+      console.error("Error deleting list:", error);
+      alert("Error deleting list. Please try again.");
+    }
   };
 
   if (loading) {
@@ -98,7 +126,7 @@ const CommuneListsPage = () => {
     <Layout>
       <CommuneFixedNav />
       <CommuneNavbar name={`${communeData?.name}`} />
-      <div className="w-8/12 mx-auto p-6 bg-white rounded-lg shadow-md mt-8">
+      <div className="w-10/12 mx-auto p-6 bg-white rounded-lg shadow-md mt-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
           Lists for Commune {communeid}
         </h1>
@@ -119,6 +147,30 @@ const CommuneListsPage = () => {
                     {list.metaData.title}
                   </Link>
                 </h2>
+                <div className="flex relative">
+                  <button
+                    onClick={() => handleOptionsClick(list.metaData.post_id)}
+                    className="text-gray-600 hover:text-gray-800 p-2"
+                  >
+                    <i className="fas fa-ellipsis-v"></i>
+                  </button>
+                  {showOptions === list.metaData.post_id && (
+                    <div className="absolute right-0 mt-10 w-48 bg-white border rounded-lg shadow-lg z-1">
+                      <button
+                        onClick={() => handleEdit(list.metaData.post_id)}
+                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(list.metaData.post_id)}
+                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <p className="text-gray-600 mb-4">{list.metaData.description}</p>
               {list.metaData.links && (

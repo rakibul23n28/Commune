@@ -24,6 +24,8 @@ import {
   createCommunePostListing,
   getCommuneListings,
   getCommuneListing,
+  deleteCommuneListing,
+  updateCommuneListing,
   getCommuneSmallInfo,
   //events
   createCommuneEvent,
@@ -34,6 +36,8 @@ import {
   collaborationPost,
   getCommunePost,
   // getCommunesByCommuneId,
+  //collaboration
+  getCollaborationPosts,
 } from "../controllers/communeController.js";
 
 import { validateToken } from "../middleware/auth.js";
@@ -113,13 +117,18 @@ router.get("/communes/info/:communeid", getCommuneSmallInfo);
 //post
 router.get("/post/:postid", getCommunePost);
 router.put("/post/:postid", validateToken, updateCommunePost);
-router.delete("/post/:postid", deleteCommunePost);
+router.delete("/post/:postid", validateToken, deleteCommunePost);
 //event
 router.get("/event/:eventid", getCommuneEvent);
 router.put("/event/:eventid", validateToken, uploadEvent, updateCommuneEvent);
-router.delete("/event/:eventid", deleteCommuneEvent);
+router.delete("/event/:eventid", validateToken, deleteCommuneEvent);
 //list
 router.get("/list/:listid", getCommuneListing);
+router.put("/list/:listid", validateToken, updateCommuneListing);
+router.delete("/list/:listid", validateToken, deleteCommuneListing);
+
+//collaboration
+router.get("/collaboration/:communeid/posts", getCollaborationPosts);
 
 router.get("/:commune_id/reviews", getCommuneReviews);
 router.get("/:communeid/posts", getCommunePosts);
