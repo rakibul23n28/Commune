@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import Layout from "../components/Layout";
 import CommuneNavbar from "../components/CommuneNavbar";
@@ -16,6 +16,10 @@ const CommuneEventsPage = () => {
   const { fetchCommuneData, communeData, getRole } = useCommuneMembership();
   const [commune, setCommune] = useState(null);
   const [showOptions, setShowOptions] = useState(null);
+  const [showCollaboration, setShowCollaboration] = useState(false);
+  const [userCommunes, setUserCommunes] = useState([]);
+  const [selectedEventId, setSelectedEventId] = useState(null);
+  const [collaborativeEvents, setCollaborativeEvents] = useState([]);
 
   useEffect(() => {
     const loadCommuneData = async () => {
@@ -46,8 +50,21 @@ const CommuneEventsPage = () => {
     }
   };
 
+  const fetchCollaborativeEvents = async () => {
+    try {
+      const response = await axios.get(
+        `/api/commune/collaboration/${communeid}/events`
+      );
+
+      setCollaborativeEvents(response.data.collaborativeEvents);
+    } catch (error) {
+      console.error("Error fetching collaborative events:", error);
+    }
+  };
+
   useEffect(() => {
     fetchCommuneEvents();
+    fetchCollaborativeEvents();
   }, [communeid]);
 
   const handleOptionsClick = (eventId) => {
@@ -56,6 +73,50 @@ const CommuneEventsPage = () => {
 
   const handleEditEvent = (eventId) => {
     location.href = `/commune/edit/${communeid}/${eventId}/event`;
+  };
+
+  const makeCollaboration = async (commune_id_2, event_id) => {
+    try {
+      const response = await axios.post(
+        `/api/commune/collaboration/event`,
+        {
+          commune_id_1: communeid, // Current commune ID
+          commune_id_2, // Selected commune ID
+          event_id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+      alert(response.data.message);
+      setShowCollaboration(false);
+    } catch (error) {
+      console.error("Error creating collaboration:", error);
+      alert(
+        error.response?.data?.message ||
+          "Failed to create collaboration. Please try again."
+      );
+    }
+  };
+  const fetchUserCommunes = async () => {
+    try {
+      const response = await axios.get(
+        `/api/user/communes/info/${user.id}?commune_id=${communeid}`
+      );
+      setUserCommunes(response.data.communes);
+    } catch (error) {
+      console.error("Error fetching user communes:", error);
+    }
+  };
+  const handleCollaborationClick = (event_id) => {
+    setSelectedEventId(event_id); // Set the selected post ID
+    fetchUserCommunes();
+    setShowCollaboration(true);
+  };
+  const closeCollaborationPopup = () => {
+    setShowCollaboration(false);
   };
 
   const handleDeleteEvent = async (eventId) => {
@@ -82,62 +143,162 @@ const CommuneEventsPage = () => {
     <Layout>
       <CommuneFixedNav />
       <CommuneNavbar name={`${commune?.name}`} />
-      <div className="w-1/2 mx-auto p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
-        {errorMessage && (
-          <div className="text-red-500 mb-4">{errorMessage}</div>
-        )}
+      {errorMessage && <div className="text-red-500 mb-4">{errorMessage}</div>}
+      <div className=" mx-40 flex bg-white rounded-lg shadow-md -z-9">
         <div className="space-y-6">
-          {events.map((event) => (
-            <div
-              key={event.event_id}
-              className="bg-white p-6 border rounded-lg shadow-md relative"
-            >
-              <h3 className="text-xl font-semibold">{event.event_name}</h3>
-              <p className="text-gray-600">
-                Organized by {event.created_by_username} on{" "}
-                {new Date(event.event_date).toLocaleString()}
-              </p>
-              {event.event_image && (
-                <img
-                  src={event.event_image}
-                  alt={event.event_name}
-                  className="mt-4 w-full rounded"
-                />
-              )}
-              <div className="mt-4">{event.event_description}</div>
+          <div className="w-1/2 bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
 
-              {(getRole(communeid) === "admin" ||
-                user.id === event.created_by) && (
-                <div className="absolute top-2 right-2">
-                  <button
-                    onClick={() => handleOptionsClick(event.event_id)}
-                    className="text-gray-600 hover:text-gray-800 p-2"
-                  >
-                    <i className="fas fa-ellipsis-v"></i>
-                  </button>
-                  {showOptions === event.event_id && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
-                      <button
-                        onClick={() => handleEditEvent(event.event_id)}
-                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEvent(event.event_id)}
-                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
+            {events.map((event) => (
+              <div
+                key={event.event_id}
+                className="bg-white p-6 border rounded-lg shadow-md relative"
+              >
+                <h3 className="text-xl font-semibold">{event.event_name}</h3>
+                <p className="text-gray-600">
+                  Organized by {event.created_by_username} on{" "}
+                  {new Date(event.event_date).toLocaleString()}
+                </p>
+                {event.event_image && (
+                  <img
+                    src={event.event_image}
+                    alt={event.event_name}
+                    className="mt-4 w-full rounded"
+                  />
+                )}
+                <div className="mt-4">{event.event_description}</div>
+
+                {(getRole(communeid) === "admin" ||
+                  user.id === event.created_by) && (
+                  <div className="absolute top-2 right-2">
+                    <button
+                      onClick={() => handleCollaborationClick(event.event_id)}
+                      className="text-green-500 hover:text-green-700 p-2"
+                    >
+                      Collaboration
+                    </button>
+                    <button
+                      onClick={() => handleOptionsClick(event.event_id)}
+                      className="text-gray-600 hover:text-gray-800 p-2"
+                    >
+                      <i className="fas fa-ellipsis-v"></i>
+                    </button>
+                    {showOptions === event.event_id && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
+                        <button
+                          onClick={() => handleEditEvent(event.event_id)}
+                          className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteEvent(event.event_id)}
+                          className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Collaborative Events */}
+        <div className="w-1/2 bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4">Collaborative Events</h2>
+          {collaborativeEvents.length > 0 ? (
+            <div className="space-y-6">
+              {collaborativeEvents.map((event) => (
+                <div
+                  key={event.event_id}
+                  className="bg-white p-6 border rounded-lg shadow-md relative"
+                >
+                  <h3 className="text-xl font-semibold">{event.event_name}</h3>
+                  <p className="text-gray-600">
+                    Collaborating with{" "}
+                    <Link to={`/commune/${event.collaborating_commune_id}`}>
+                      <strong className="text-blue-500">
+                        {event.collaborating_commune_name}
+                      </strong>
+                    </Link>
+                  </p>
+                  <img
+                    src={
+                      event.collaborating_commune_image ||
+                      "/default-commune.png"
+                    }
+                    alt={event.collaborating_commune_name}
+                    className="mt-4 w-10 h-10 rounded-full"
+                  />
+                  <p className="mt-2">
+                    Organized on {new Date(event.event_date).toLocaleString()}
+                  </p>
+                  <div className="mt-4 text-wrap">
+                    {event.event_description}
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-          ))}
+          ) : (
+            <p className="text-gray-500">No collaborative events found.</p>
+          )}
         </div>
       </div>
+
+      {/* Collaboration Popup */}
+      {showCollaboration && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-3/4 max-h-96 overflow-y-auto relative">
+            <button
+              onClick={closeCollaborationPopup}
+              className="absolute top-3 right-3 bg-red-500 text-white px-4 py-2 rounded-full text-sm hover:bg-red-600 transition duration-200"
+            >
+              Close
+            </button>
+            <h2 className="text-xl font-bold mb-4">
+              Collaborate this post with your communes
+            </h2>
+            {userCommunes.length > 0 ? (
+              <ul className="space-y-4">
+                {userCommunes.map((commune) => (
+                  <li
+                    key={commune.commune_id}
+                    className="flex justify-between space-x-4 shadow p-2 rounded"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex space-x-4">
+                        <img
+                          src={commune.commune_image || "/default-commune.png"}
+                          alt={commune.commune_name}
+                          className="w-10 h-10 rounded-full"
+                        />
+                        <p className="text-lg font-medium">
+                          {commune.commune_name} ({commune.role})
+                        </p>
+                      </div>
+                      <h2>{commune.description}</h2>
+                    </div>
+                    <div className="flex space-x-4">
+                      <button
+                        onClick={() =>
+                          makeCollaboration(commune.commune_id, selectedEventId)
+                        }
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                      >
+                        Collaborate
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500">No communes found.</p>
+            )}
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

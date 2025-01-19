@@ -126,6 +126,21 @@ CREATE TABLE collaborations_post (
     FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE
 );
 
+-- Table for Event Collaborations
+CREATE TABLE collaborations_event (
+    collaboration_id INT AUTO_INCREMENT PRIMARY KEY,
+    commune_id_1 INT NOT NULL,         -- First commune involved in the collaboration
+    commune_id_2 INT NOT NULL,         -- Second commune involved in the collaboration
+    event_id INT NOT NULL,             -- Event for which the collaboration is created
+    collaboration_status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending', -- Collaboration status
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp when collaboration was created
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Timestamp for updates
+    FOREIGN KEY (commune_id_1) REFERENCES communes(commune_id) ON DELETE CASCADE,
+    FOREIGN KEY (commune_id_2) REFERENCES communes(commune_id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE
+);
+
+
 -- Table for Chats
 CREATE TABLE chats (
     chat_id INT AUTO_INCREMENT PRIMARY KEY,

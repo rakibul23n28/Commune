@@ -34,9 +34,7 @@ const CommuneNavbar = ({ name = "" }) => {
     if (option === "profile") {
       navigate(`/commune/${communeid}`);
     } else if (option === "sentRequests") {
-      navigate(`/communes/${communeid}/sent-requests`);
-    } else if (option === "receivedRequests") {
-      navigate(`/communes/${communeid}/received-requests`);
+      navigate(`/commune/${communeid}/sent-requests`);
     } else if (option === "settings") {
       navigate(`/commune/${communeid}/settings`);
     }
@@ -49,7 +47,7 @@ const CommuneNavbar = ({ name = "" }) => {
   };
 
   return (
-    <div className="w-full bg-gray-800 text-white shadow-md sticky top-0 z-10">
+    <div className="w-full bg-gray-800 text-white shadow-md sticky top-0 z-40">
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex space-x-4">
           <button
@@ -68,13 +66,6 @@ const CommuneNavbar = ({ name = "" }) => {
               >
                 <i className="fas fa-paper-plane mr-2"></i>
                 Sent Requests
-              </button>
-              <button
-                onClick={() => handleNavigation("receivedRequests")}
-                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
-              >
-                <i className="fas fa-envelope mr-2"></i>
-                Received Requests
               </button>
               <button
                 onClick={() => handleNavigation("settings")}

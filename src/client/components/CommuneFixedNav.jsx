@@ -59,7 +59,7 @@ const FixedButtons = () => {
     getRole(communeid) === "admin" || getRole(communeid) === "moderator";
 
   return (
-    <div className="fixed left-4 top-1/4 flex flex-col space-y-4">
+    <div className="fixed left-4 top-1/4 flex flex-col space-y-4 z-30">
       {/* Collaboration Button */}
       <div
         onClick={toggleCollaborationOptions}
@@ -77,11 +77,6 @@ const FixedButtons = () => {
             <Link to={`/commune/${communeid}/collaboration/lists`}>
               <button className="bg-green-500 text-white rounded-full px-4 py-2 hover:bg-green-600 shadow-lg">
                 Lists
-              </button>
-            </Link>
-            <Link to={`/commune/${communeid}/collaboration/events`}>
-              <button className="bg-red-500 text-white rounded-full px-4 py-2 hover:bg-red-600 shadow-lg">
-                Events
               </button>
             </Link>
           </div>

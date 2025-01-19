@@ -39,6 +39,9 @@ import CollaborationListPage from "./pages/CollaborationListPage";
 import RedirectIfAuthenticated from "./utils/RedirectIfAuthenticated";
 import AdminModeratorProtected from "./utils/AdminModeratorProtected";
 
+//admin
+import CommuneSendRequest from "./pages/CommuneSendRequest";
+
 const App = () => (
   <AuthProvider>
     <Router>
@@ -110,6 +113,18 @@ const App = () => (
                     <ProtectedRoute>
                       <AdminModeratorProtected>
                         <EditEventPage />
+                      </AdminModeratorProtected>
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* //Admin Collaborate */}
+                <Route
+                  path=":communeid/sent-requests"
+                  element={
+                    <ProtectedRoute>
+                      <AdminModeratorProtected>
+                        <CommuneSendRequest />
                       </AdminModeratorProtected>
                     </ProtectedRoute>
                   }

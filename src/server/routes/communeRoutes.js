@@ -34,11 +34,16 @@ import {
   deleteCommuneEvent,
   updateCommuneEvent,
   collaborationPost,
+  collaborationEvent,
   getCommunePost,
   // getCommunesByCommuneId,
   //collaboration
   getCollaborationPosts,
   getCollaborationLists,
+  getCollaborationEvents,
+  getCollaborationPending,
+  changeCollaborationEventStatus,
+  changeCollaborationPostStatus,
   deleteCollaboration,
 } from "../controllers/communeController.js";
 
@@ -111,7 +116,9 @@ export const uploadEvent = multer({
 
 // Example route for fetching user's communes
 router.get("/all", getAllCommunes);
+// collaboration
 router.post("/collaboration/post", validateToken, collaborationPost);
+router.post("/collaboration/event", validateToken, collaborationEvent);
 // router.get("/communes/c/:communeid", getCommunesByCommuneId);
 router.get("/joined/:userId", validateToken, getJoinedCommunes);
 router.get("/communes/:communeid", getUserCommunesByCommuneId);
@@ -132,6 +139,21 @@ router.delete("/list/:listid", validateToken, deleteCommuneListing);
 //collaboration
 router.get("/collaboration/:communeid/posts", getCollaborationPosts);
 router.get("/collaboration/:communeid/lists", getCollaborationLists);
+router.get("/collaboration/:communeid/events", getCollaborationEvents);
+router.patch(
+  "/collaboration/:collaborationid/post",
+  validateToken,
+  changeCollaborationPostStatus
+);
+router.patch(
+  "/collaboration/:collaborationid/event",
+  validateToken,
+  changeCollaborationEventStatus
+);
+router.get(
+  "/collaboration/:communeid/pending-collaborations",
+  getCollaborationPending
+);
 
 router.delete("/collaboration/:postid", validateToken, deleteCollaboration);
 

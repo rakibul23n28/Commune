@@ -1186,12 +1186,39 @@ export const collaborationPost = async (req, res) => {
   }
 };
 
+export const collaborationEvent = async (req, res) => {
+  const { commune_id_1, commune_id_2, event_id } = req.body;
+
+  try {
+    // Check if a similar collaboration already exists
+    const [existingCollaboration] = await pool.query(
+      "SELECT * FROM collaborations_event WHERE commune_id_1 = ? AND commune_id_2 = ? AND event_id = ?",
+      [commune_id_1, commune_id_2, event_id]
+    );
+
+    if (existingCollaboration.length !== 0) {
+      return res.status(400).json({ message: "Collaboration already exists." });
+    }
+
+    // Insert the new collaboration
+    await pool.query(
+      "INSERT INTO collaborations_event (commune_id_1, commune_id_2, event_id) VALUES (?, ?, ?)",
+      [commune_id_1, commune_id_2, event_id]
+    );
+
+    res.status(201).json({ message: "Collaboration request created." });
+  } catch (error) {
+    console.error("Error creating collaboration:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 export const getCollaborationPosts = async (req, res) => {
   const { communeid } = req.params;
 
   try {
     const [collaborations] = await pool.query(
-      "SELECT post_id FROM collaborations_post WHERE  commune_id_2 = ?",
+      "SELECT post_id FROM collaborations_post WHERE collaboration_status = 'accepted' AND commune_id_2 = ?",
       [communeid]
     );
 
@@ -1204,7 +1231,7 @@ export const getCollaborationPosts = async (req, res) => {
       (collaboration) => collaboration.post_id
     );
     const [posts] = await pool.query(
-      "SELECT post_id, title, content, links, tags, posts.created_at, username, profile_image FROM posts JOIN users ON posts.user_id = users.user_id WHERE post_id IN (?)",
+      "SELECT post_id, title, content, links, tags, posts.created_at, username, profile_image FROM posts JOIN users ON posts.user_id = users.user_id WHERE post_type = 'blog' AND post_id IN (?)",
       [postIds]
     );
 
@@ -1214,17 +1241,113 @@ export const getCollaborationPosts = async (req, res) => {
     res.status(500).json({ message: "Internal server error." });
   }
 };
+export const getCollaborationEvents = async (req, res) => {
+  const { communeid } = req.params;
+
+  try {
+    const query = `
+      SELECT 
+        ce.collaboration_id,
+        ce.event_id,
+        ce.collaboration_status,
+        e.event_name,
+        e.event_date,
+        e.event_description,
+        e.created_by,
+        c1.name AS collaborating_commune_name,
+        c1.commune_id AS collaborating_commune_id,
+        c1.commune_image AS collaborating_commune_image
+      FROM collaborations_event ce
+      JOIN communes c1 ON ce.commune_id_1 = c1.commune_id
+      JOIN events e ON ce.event_id = e.event_id
+      WHERE ce.collaboration_status = 'accepted' AND ce.commune_id_2 = ?
+
+      ORDER BY e.event_date DESC;
+    `;
+
+    const [results] = await pool.query(query, [communeid]);
+
+    res.status(200).json({ success: true, collaborativeEvents: results });
+  } catch (error) {
+    console.error("Error fetching collaborative events:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch collaborative events. Please try again.",
+    });
+  }
+};
+// Function to fetch pending collaborations for posts and events
+export const getCollaborationPending = async (req, res) => {
+  const { communeid } = req.params;
+
+  try {
+    // Fetch pending post collaborations
+    const [pendingPosts] = await pool.query(
+      `
+          SELECT 
+              cp.collaboration_id, 
+              p.title, 
+              p.content AS description,
+              p.post_type,
+              c1.name AS collaborating_commune_name, 
+              c1.commune_image AS collaborating_commune_image,
+              c1.commune_id AS collaborating_commune_id,
+              cp.created_at
+          FROM collaborations_post cp
+          JOIN posts p ON cp.post_id = p.post_id
+          JOIN communes c1 ON cp.commune_id_2 = c1.commune_id
+          WHERE cp.commune_id_1 = ? AND cp.collaboration_status = 'pending'
+      `,
+      [communeid]
+    );
+
+    // Fetch pending event collaborations
+    const [pendingEvents] = await pool.query(
+      `
+          SELECT 
+              ce.collaboration_id, 
+              e.event_name, 
+              e.event_description,
+              c1.name AS collaborating_commune_name, 
+              c1.commune_image AS collaborating_commune_image, 
+              c1.commune_id AS collaborating_commune_id,
+              ce.created_at
+          FROM collaborations_event ce
+          JOIN events e ON ce.event_id = e.event_id
+          JOIN communes c1 ON ce.commune_id_2 = c1.commune_id
+          WHERE ce.commune_id_1 = ? AND ce.collaboration_status = 'pending'
+      `,
+      [communeid]
+    );
+
+    // Return both pending posts and events
+    res.status(200).json({
+      pendingPosts,
+      pendingEvents,
+    });
+  } catch (error) {
+    console.error("Error fetching pending collaborations:", error);
+    res.status(500).json({ message: "Error fetching pending collaborations." });
+  }
+};
+
 export const getCollaborationLists = async (req, res) => {
   const { communeid } = req.params;
 
   try {
     const [collaborations] = await pool.query(
-      "SELECT commune_id_1 FROM collaborations_post WHERE commune_id_2 = ?",
+      "SELECT commune_id_1 FROM collaborations_post WHERE collaboration_status = 'accepted' AND commune_id_2 = ?",
       [communeid]
     );
     const uniqueCommuneIds = Array.from(
       new Set(collaborations.map((c) => c.commune_id_1))
     );
+
+    if (uniqueCommuneIds.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No posts found for collaborations." });
+    }
 
     // Step 3: Fetch all posts for the unique commune IDs
     const [posts] = await pool.query(
@@ -1298,6 +1421,41 @@ export const deleteCollaboration = async (req, res) => {
     res.status(200).json({ message: "Collaboration request deleted." });
   } catch (error) {
     console.error("Error deleting collaboration:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const changeCollaborationEventStatus = async (req, res) => {
+  const { collaborationid } = req.params;
+  const { status } = req.body;
+
+  try {
+    await pool.query(
+      "UPDATE collaborations_event SET collaboration_status = ? WHERE collaboration_id = ?",
+      [status, collaborationid]
+    );
+
+    res.status(200).json({ message: "Collaboration event status updated." });
+  } catch (error) {
+    console.error("Error updating collaboration event status:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const changeCollaborationPostStatus = async (req, res) => {
+  const { collaborationid } = req.params;
+  const { status } = req.body;
+  console.log("Collaboration ID:", collaborationid);
+
+  try {
+    await pool.query(
+      "UPDATE collaborations_post SET collaboration_status = ? WHERE collaboration_id = ?",
+      [status, collaborationid]
+    );
+
+    res.status(200).json({ message: "Collaboration post status updated." });
+  } catch (error) {
+    console.error("Error updating collaboration post status:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 };
