@@ -32,9 +32,14 @@ import CreateEvent from "./pages/CreateEvent";
 import CommuneEventsPage from "./pages/CommuneEventsPage";
 import EditEventPage from "./pages/EditEventPage";
 
+//products
+import CreateProduct from "./pages/CreateProduct";
+import CommuneProduct from "./pages/communeProduct";
+
 //collaboration
 import CollaborationPostPage from "./pages/CollaborationPostPage";
 import CollaborationListPage from "./pages/CollaborationListPage";
+import CollaborationRequests from "./pages/CollaborationRequests";
 // Utils
 import RedirectIfAuthenticated from "./utils/RedirectIfAuthenticated";
 import AdminModeratorProtected from "./utils/AdminModeratorProtected";
@@ -60,6 +65,10 @@ const App = () => (
                 <Route path="" element={<AllCommunes />} />
                 <Route path=":communeid/posts" element={<CommunePostsPage />} />
                 <Route path=":communeid/lists" element={<CommuneListsPage />} />
+                <Route
+                  path=":communeid/products"
+                  element={<CommuneProduct />}
+                />
                 <Route
                   path=":communeid/events"
                   element={<CommuneEventsPage />}
@@ -99,6 +108,16 @@ const App = () => (
                   }
                 />
                 <Route
+                  path="/create/:communeid/product"
+                  element={
+                    <ProtectedRoute>
+                      <AdminModeratorProtected>
+                        <CreateProduct />
+                      </AdminModeratorProtected>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="edit/:communeid/:postid/post"
                   element={
                     <ProtectedRoute>
@@ -120,11 +139,22 @@ const App = () => (
 
                 {/* //Admin Collaborate */}
                 <Route
-                  path=":communeid/sent-requests"
+                  path=":communeid/requests"
                   element={
                     <ProtectedRoute>
                       <AdminModeratorProtected>
                         <CommuneSendRequest />
+                      </AdminModeratorProtected>
+                    </ProtectedRoute>
+                  }
+                />
+                {/* //Admin Collaborate */}
+                <Route
+                  path=":communeid/pending"
+                  element={
+                    <ProtectedRoute>
+                      <AdminModeratorProtected>
+                        <CollaborationRequests />
                       </AdminModeratorProtected>
                     </ProtectedRoute>
                   }

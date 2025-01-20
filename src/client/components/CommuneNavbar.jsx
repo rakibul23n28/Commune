@@ -34,9 +34,11 @@ const CommuneNavbar = ({ name = "" }) => {
     if (option === "profile") {
       navigate(`/commune/${communeid}`);
     } else if (option === "sentRequests") {
-      navigate(`/commune/${communeid}/sent-requests`);
+      navigate(`/commune/${communeid}/requests`);
     } else if (option === "settings") {
       navigate(`/commune/${communeid}/settings`);
+    } else if (option === "PendingRequests") {
+      navigate(`/commune/${communeid}/pending`);
     }
   };
 
@@ -65,7 +67,14 @@ const CommuneNavbar = ({ name = "" }) => {
                 className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
               >
                 <i className="fas fa-paper-plane mr-2"></i>
-                Sent Requests
+                Requests
+              </button>
+              <button
+                onClick={() => handleNavigation("PendingRequests")}
+                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
+              >
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                Pending
               </button>
               <button
                 onClick={() => handleNavigation("settings")}

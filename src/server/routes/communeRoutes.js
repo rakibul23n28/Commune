@@ -33,18 +33,12 @@ import {
   getCommuneEvent,
   deleteCommuneEvent,
   updateCommuneEvent,
-  collaborationPost,
-  collaborationEvent,
+
+  //products
+  createProduct,
+  getCommuneProducts,
   getCommunePost,
   // getCommunesByCommuneId,
-  //collaboration
-  getCollaborationPosts,
-  getCollaborationLists,
-  getCollaborationEvents,
-  getCollaborationPending,
-  changeCollaborationEventStatus,
-  changeCollaborationPostStatus,
-  deleteCollaboration,
 } from "../controllers/communeController.js";
 
 import { validateToken } from "../middleware/auth.js";
@@ -116,9 +110,7 @@ export const uploadEvent = multer({
 
 // Example route for fetching user's communes
 router.get("/all", getAllCommunes);
-// collaboration
-router.post("/collaboration/post", validateToken, collaborationPost);
-router.post("/collaboration/event", validateToken, collaborationEvent);
+
 // router.get("/communes/c/:communeid", getCommunesByCommuneId);
 router.get("/joined/:userId", validateToken, getJoinedCommunes);
 router.get("/communes/:communeid", getUserCommunesByCommuneId);
@@ -136,30 +128,12 @@ router.get("/list/:listid", getCommuneListing);
 router.put("/list/:listid", validateToken, updateCommuneListing);
 router.delete("/list/:listid", validateToken, deleteCommuneListing);
 
-//collaboration
-router.get("/collaboration/:communeid/posts", getCollaborationPosts);
-router.get("/collaboration/:communeid/lists", getCollaborationLists);
-router.get("/collaboration/:communeid/events", getCollaborationEvents);
-router.patch(
-  "/collaboration/:collaborationid/post",
-  validateToken,
-  changeCollaborationPostStatus
-);
-router.patch(
-  "/collaboration/:collaborationid/event",
-  validateToken,
-  changeCollaborationEventStatus
-);
-router.get(
-  "/collaboration/:communeid/pending-collaborations",
-  getCollaborationPending
-);
-
-router.delete("/collaboration/:postid", validateToken, deleteCollaboration);
+//product
 
 router.get("/:commune_id/reviews", getCommuneReviews);
 router.get("/:communeid/posts", getCommunePosts);
 router.get("/:communeid/events", getCommuneEvents);
+router.get("/:communeid/products", getCommuneProducts);
 //list
 router.get("/:communeid/lists", getCommuneListings);
 
@@ -167,9 +141,45 @@ router.get("/:username", getUserCommunes);
 // Route to add a review to a commune
 router.post("/:communeid/reviews", validateToken, setCommuneReview);
 // POST route to create a new post (listing)
-router.post("/:communeid/listings", validateToken, createCommunePostListing);
+router.post(
+  "/create/:communeid/listings",
+  validateToken,
+  createCommunePostListing
+);
 
 router.post("/create/:communeId/post", validateToken, createCommunePostBlog);
+
+// Configure Multer storage
+const storageProduct = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/commune_images/products/"); // Folder where the file will be stored
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname); // Get file extension
+    cb(null, req.user.id + "-" + Date.now() + ext); // Custom file naming
+  },
+});
+
+// Multer middleware for single file upload
+export const uploadProduct = multer({
+  storage: storageProduct,
+  limits: { fileSize: 10 * 1024 * 1024 }, // Limit file size to 10MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed (jpeg, png, jpg, gif)"));
+    }
+  },
+}).single("productImage");
+
+router.post(
+  "/create/:communeid/product",
+  validateToken,
+  uploadProduct,
+  createProduct
+);
 
 router.post(
   "/create/:communeid/event",
@@ -177,6 +187,7 @@ router.post(
   uploadEvent,
   createCommuneEvent
 );
+
 router.post("/membership/:communeId/join", validateToken, joinCommune);
 router.delete("/delete/:communeid", validateToken, deleteCommune);
 

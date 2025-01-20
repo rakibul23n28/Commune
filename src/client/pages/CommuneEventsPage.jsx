@@ -53,7 +53,7 @@ const CommuneEventsPage = () => {
   const fetchCollaborativeEvents = async () => {
     try {
       const response = await axios.get(
-        `/api/commune/collaboration/${communeid}/events`
+        `/api/collaboration/${communeid}/events`
       );
 
       setCollaborativeEvents(response.data.collaborativeEvents);
@@ -78,7 +78,7 @@ const CommuneEventsPage = () => {
   const makeCollaboration = async (commune_id_2, event_id) => {
     try {
       const response = await axios.post(
-        `/api/commune/collaboration/event`,
+        `/api/collaboration/event`,
         {
           commune_id_1: communeid, // Current commune ID
           commune_id_2, // Selected commune ID
@@ -131,6 +131,29 @@ const CommuneEventsPage = () => {
       } catch (error) {
         setErrorMessage("Error deleting event. Please try again.");
         console.error("Error deleting event:", error);
+      }
+    }
+  };
+  const handleDeleteCollaboration = async (eventId) => {
+    if (window.confirm("Are you sure you want to delete this collaboration?")) {
+      try {
+        const response = await axios.delete(
+          `/api/collaboration/${eventId}/event`,
+          {
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        );
+        setCollaborativeEvents(
+          collaborativeEvents.filter((event) => event.event_id !== eventId)
+        );
+      } catch (error) {
+        console.error("Error deleting collaboration:", error);
+        alert(
+          error.response?.data?.message ||
+            "Failed to delete collaboration. Please try again."
+        );
       }
     }
   };
@@ -215,6 +238,15 @@ const CommuneEventsPage = () => {
                   key={event.event_id}
                   className="bg-white p-6 border rounded-lg shadow-md relative"
                 >
+                  {(getRole(communeid) === "admin" ||
+                    getRole(communeid) === "moderator") && (
+                    <button
+                      onClick={() => handleDeleteCollaboration(event.event_id)}
+                      className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                    >
+                      <i className="fas fa-trash mr-2"></i> Collaboration
+                    </button>
+                  )}
                   <h3 className="text-xl font-semibold">{event.event_name}</h3>
                   <p className="text-gray-600">
                     Collaborating with{" "}

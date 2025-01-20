@@ -39,7 +39,7 @@ const CommuneSendRequest = () => {
     if (communeid) {
       try {
         const response = await axios.get(
-          `/api/commune/collaboration/${communeid}/pending-collaborations`
+          `/api/collaboration/${communeid}/pending-collaborations`
         );
         const { pendingPosts, pendingEvents } = response.data;
         setPendingPosts(pendingPosts);
@@ -65,8 +65,8 @@ const CommuneSendRequest = () => {
     try {
       const endpoint =
         type === "post"
-          ? `/api/commune/collaboration/${collaborationId}/post`
-          : `/api/commune/collaboration/${collaborationId}/event`;
+          ? `/api/collaboration/${collaborationId}/post`
+          : `/api/collaboration/${collaborationId}/event`;
 
       await axios.patch(
         endpoint,

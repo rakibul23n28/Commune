@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import Layout from "../components/Layout";
 import CommuneNavbar from "../components/CommuneNavbar";
@@ -17,6 +17,11 @@ const CollaborationPostPage = () => {
   const { getRole, fetchCommuneData, communeData } = useCommuneMembership();
   const [commune, setCommune] = useState(null);
   const [showOptions, setShowOptions] = useState(null);
+  const [showComments, setShowComments] = useState(null);
+  const [commentInput, setCommentInput] = useState("");
+
+  // New state to track comments for each post
+  const [newComments, setNewComments] = useState({});
 
   useEffect(() => {
     const loadCommuneData = async () => {
@@ -31,7 +36,7 @@ const CollaborationPostPage = () => {
       }
     };
     loadCommuneData();
-  }, [communeData]);
+  }, [communeData, communeid]);
 
   useEffect(() => {
     if (communeData) {
@@ -40,10 +45,9 @@ const CollaborationPostPage = () => {
   }, [communeData]);
 
   const fetchCommunePosts = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(
-        `/api/commune/collaboration/${communeid}/posts`
-      );
+      const response = await axios.get(`/api/collaboration/${communeid}/posts`);
       setPosts(response.data.posts);
     } catch (error) {
       setErrorMessage("Error fetching posts. Please try again.");
@@ -67,14 +71,14 @@ const CollaborationPostPage = () => {
     if (window.confirm("Are you sure you want to delete this collaboration?")) {
       try {
         const response = await axios.delete(
-          `/api/commune/collaboration/${postId}`,
+          `/api/collaboration/${postId}/post`,
           {
             headers: {
               Authorization: `Bearer ${user.token}`,
             },
           }
         );
-        alert(response.data.message);
+        // alert(response.data.message);
         setPosts((prevPosts) =>
           prevPosts.filter((post) => post.post_id !== postId)
         );
@@ -85,6 +89,131 @@ const CollaborationPostPage = () => {
             "Failed to delete collaboration. Please try again."
         );
       }
+    }
+  };
+  const handleReaction = async (postId, type) => {
+    // Check if the user has already reacted
+    const userReaction = posts.find(
+      (post) => post.post_id === postId
+    )?.userReaction;
+
+    if (userReaction === type) {
+      alert(`You have already ${type}d this post.`);
+      return; // Prevent the user from reacting again
+    }
+
+    try {
+      // Send reaction to the server
+      const response = await axios.post(
+        `/api/post/${postId}/reactions`,
+        { reaction_type: type },
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      // Update the reaction counts based on the new reaction
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.post_id === postId
+            ? {
+                ...post,
+                userReaction: type, // Track the user's reaction
+                likes:
+                  type === "like" && userReaction !== "like"
+                    ? response.data.reaction_count // Update likes if it's a new "like"
+                    : post.likes === 0
+                    ? 0
+                    : post.likes - 1,
+                hates:
+                  type === "hate" && userReaction !== "hate"
+                    ? response.data.reaction_count // Update hates if it's a new "hate"
+                    : post.hates === 0
+                    ? 0
+                    : post.hates - 1,
+              }
+            : post
+        )
+      );
+    } catch (error) {
+      console.error("Error handling reaction:", error);
+      alert("Failed to react. Please try again.");
+    }
+  };
+
+  const handleToggleComments = (postId) => {
+    if (showComments === postId) {
+      setShowComments(null);
+    } else {
+      setShowComments(postId);
+      // Clear the comment input field when toggling the comments
+      setNewComments((prev) => ({
+        ...prev,
+        [postId]: "", // Reset the comment input to be empty
+      }));
+      fetchComments(postId);
+    }
+  };
+
+  const handleAddComment = async (postId) => {
+    const content = commentInput;
+    console.log(content);
+
+    if (!content.trim()) {
+      alert("Comment cannot be empty.");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `/api/post/${postId}/comments`,
+        { content },
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      const newComment = response.data.comment;
+      // console.log(newComment, "asdsadsd");
+
+      setNewComments((prev) => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), newComment],
+      }));
+
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.post_id === postId
+            ? {
+                ...post,
+                comments: post.comments + 1,
+              }
+            : post
+        )
+      );
+
+      setCommentInput("");
+
+      alert("Comment added!");
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      alert("Failed to add comment. Please try again.");
+    }
+  };
+
+  const fetchComments = async (postId) => {
+    try {
+      const response = await axios.get(`/api/post/${postId}/comments`);
+      setNewComments((prev) => ({
+        ...prev,
+        [postId]: response.data.comments || [],
+      }));
+    } catch (error) {
+      console.error("Error fetching comments:", error);
     }
   };
 
@@ -141,7 +270,7 @@ const CollaborationPostPage = () => {
                       <div className="absolute right-0 mt-10 w-48 bg-white border rounded-lg shadow-lg z-10">
                         <button
                           onClick={() => handleCopyLink(post.post_id)}
-                          className=" w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center"
+                          className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center"
                         >
                           <i className="fas fa-link mr-2"></i> Copy Link
                         </button>
@@ -151,10 +280,9 @@ const CollaborationPostPage = () => {
                             onClick={() =>
                               handleDeleteCollaboration(post.post_id)
                             }
-                            className=" w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center"
+                            className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center"
                           >
-                            <i className="fas fa-trash mr-2"></i>
-                            Collaboration
+                            <i className="fas fa-trash mr-2"></i> Collaboration
                           </button>
                         )}
                       </div>
@@ -168,12 +296,93 @@ const CollaborationPostPage = () => {
                   className="text-gray-700 overflow-hidden max-h-96 overflow-ellipsis"
                   dangerouslySetInnerHTML={{ __html: post.content }}
                 ></div>
-                <a
-                  href={`/commune/${communeid}/post/${post.post_id}`}
-                  className="mt-4 inline-block text-blue-600 hover:underline font-medium"
-                >
-                  Read more
-                </a>
+                <div className="flex justify-between w-full space-x-4 mt-4">
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleReaction(post.post_id, "like")}
+                      className="text-green-600"
+                    >
+                      👍 {post.likes || 0}
+                    </button>
+                    <button
+                      onClick={() => handleReaction(post.post_id, "hate")}
+                      className="text-red-600"
+                    >
+                      👎 {post.hates || 0}
+                    </button>
+                  </div>
+                  <div className="flex space-x-2 relative">
+                    <button
+                      onClick={() => handleToggleComments(post.post_id)}
+                      className="text-gray-600"
+                    >
+                      💬 {post.comments || 0}
+                    </button>
+                    {showComments === post.post_id && (
+                      <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50">
+                        {/* Comments modal */}
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border rounded-lg shadow-lg p-4 z-60">
+                          <div className="flex justify-between items-center mb-4">
+                            <h4 className="text-lg font-bold">Comments</h4>
+                            <button
+                              onClick={() => setShowComments(null)}
+                              className="text-gray-600 hover:text-gray-800"
+                            >
+                              ✖
+                            </button>
+                          </div>
+                          <div className="space-y-2 mt-2 max-h-96 overflow-y-auto">
+                            {Array.isArray(newComments[post.post_id]) &&
+                              newComments[post.post_id]?.map((comment) => (
+                                <div
+                                  key={comment.comment_id}
+                                  className="border-b pb-2 flex items-start space-x-4"
+                                >
+                                  {/* Display user profile image */}
+                                  <img
+                                    src={
+                                      comment.profile_image ||
+                                      "/default-avatar.png"
+                                    }
+                                    alt={`${comment.username}'s avatar`}
+                                    className="w-10 h-10 rounded-full"
+                                  />
+                                  <div className="flex-1">
+                                    {/* Display comment content */}
+                                    <p className="text-gray-800">
+                                      {comment.content}
+                                    </p>
+                                    {/* Display time ago and username */}
+                                    <p className="text-sm text-gray-500">
+                                      {timeAgo(comment.created_at)} by{" "}
+                                      <Link to={`/profile/${comment.username}`}>
+                                        <strong className="font-semibold text-blue-500">
+                                          {comment.username}
+                                        </strong>
+                                      </Link>
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                          {/* Comment input field */}
+                          <textarea
+                            value={commentInput}
+                            onChange={(e) => setCommentInput(e.target.value)}
+                            className="w-full mt-2 border rounded p-2"
+                            placeholder="Add a comment..."
+                          ></textarea>
+                          <button
+                            onClick={() => handleAddComment(post.post_id)}
+                            className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+                          >
+                            Comment
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             ))}
         </div>

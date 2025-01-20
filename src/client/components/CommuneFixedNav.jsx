@@ -7,13 +7,39 @@ import axios from "axios";
 const FixedButtons = () => {
   const { communeid } = useParams();
   const { user } = useAuth(); // Accessing user from AuthContext
-  const { fetchMembershipStatus, isMember, getRole, joinCommune } =
-    useCommuneMembership();
+  const {
+    fetchMembershipStatus,
+    isMember,
+    getRole,
+    joinCommune,
+    fetchCommuneData,
+    communeData,
+  } = useCommuneMembership();
 
   const [hover, setHover] = useState(false);
   const [showCollaborationOptions, setShowCollaborationOptions] =
     useState(false); // State to toggle collaboration options
   const [error, setError] = useState(null);
+  const [commune, setCommune] = useState(null);
+
+  useEffect(() => {
+    const loadCommuneData = async () => {
+      try {
+        if (!communeData) {
+          await fetchCommuneData(communeid);
+        }
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to load commune data");
+      }
+    };
+    loadCommuneData();
+  }, [communeid, communeData]);
+
+  useEffect(() => {
+    if (communeData) {
+      setCommune(communeData);
+    }
+  }, [communeData]);
 
   useEffect(() => {
     const fetchUserMembership = async () => {
@@ -60,6 +86,13 @@ const FixedButtons = () => {
 
   return (
     <div className="fixed left-4 top-1/4 flex flex-col space-y-4 z-30">
+      {commune?.commune_type === "ecommerce" && (
+        <Link to={`/commune/${communeid}/products`}>
+          <button className="bg-black text-white rounded-full px-4 py-2 hover:bg-gray-600 shadow-lg">
+            Products
+          </button>
+        </Link>
+      )}
       {/* Collaboration Button */}
       <div
         onClick={toggleCollaborationOptions}
@@ -109,6 +142,18 @@ const FixedButtons = () => {
           <i className="fas fa-plus text-2xl"></i>
           {hover && (
             <div className="absolute bottom-20 right-0 bg-white shadow-lg rounded-lg p-4 text-black space-y-2">
+              {commune.commune_type === "ecommerce" &&
+                (getRole(communeid) === "admin" ||
+                  getRole(communeid) === "moderator") && (
+                  <button
+                    className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+                    onClick={() => handleActionClick("product")}
+                  >
+                    <i className="fas fa-box-open text-indigo-600 mr-2"></i>
+                    Product
+                  </button>
+                )}
+
               <button
                 className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
                 onClick={() => handleActionClick("post")}

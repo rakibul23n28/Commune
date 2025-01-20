@@ -121,6 +121,7 @@ CREATE TABLE collaborations_post (
     post_id INT NOT NULL,
     collaboration_status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (commune_id_1) REFERENCES communes(commune_id) ON DELETE CASCADE,
     FOREIGN KEY (commune_id_2) REFERENCES communes(commune_id) ON DELETE CASCADE,
     FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE

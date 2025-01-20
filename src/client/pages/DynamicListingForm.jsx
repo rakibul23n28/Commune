@@ -127,7 +127,7 @@ const DynamicListingForm = () => {
 
     try {
       await axios.post(
-        `/api/commune/${communeid}/listings`,
+        `/api/commune/create/${communeid}/listings`,
         {
           metaData,
           columns,
