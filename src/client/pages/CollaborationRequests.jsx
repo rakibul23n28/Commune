@@ -2,10 +2,15 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Layout from "../components/Layout";
+import CommuneNavbar from "../components/CommuneNavbar";
+import CommuneFixedNav from "../components/CommuneFixedNav";
+import { useCommuneMembership } from "../context/CommuneMembershipContext";
 
 const CollaborationRequests = () => {
   const { communeid } = useParams();
   const { user } = useAuth();
+  const { fetchCommuneData, communeData, getRole } = useCommuneMembership();
   const [collaborations, setCollaborations] = useState({
     posts: [],
     events: [],
@@ -85,75 +90,80 @@ const CollaborationRequests = () => {
   }, []);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Collaboration Requests</h1>
+    <Layout>
+      <CommuneFixedNav />
+      <CommuneNavbar name={communeData?.name} />
 
-      {/* Posts Section */}
-      <section>
-        <h2 className="text-xl font-semibold mb-2">Posts</h2>
-        {collaborations.posts.length > 0 ? (
-          collaborations.posts.map((post) => (
-            <div
-              key={post.collaboration_id}
-              className="border p-4 mb-4 rounded-lg flex justify-between items-center"
-            >
-              <div>
-                <h3 className="font-semibold">{post.title}</h3>
-                <p>{post.description}</p>
-                <div className="text-sm text-gray-600">
-                  <strong>Status:</strong> {post.collaboration_status}
-                </div>
-                <div className="text-sm text-gray-600">
-                  <strong>Collaborating Commune:</strong>{" "}
-                  {post.collaborating_commune_name}
-                </div>
-              </div>
-              <button
-                className="bg-red-500 text-white px-4 py-2 rounded"
-                onClick={() => handleDeleteCollaborationPost(post.post_id)}
-              >
-                Delete
-              </button>
-            </div>
-          ))
-        ) : (
-          <p>No pending or rejected post collaborations.</p>
-        )}
-      </section>
+      <div className="w-1/2 mx-auto p-6 mt-6 bg-white rounded-lg shadow-lg">
+        <h1 className="text-2xl font-bold mb-4">Collaboration Requests</h1>
 
-      {/* Events Section */}
-      <section className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">Events</h2>
-        {collaborations.events.length > 0 ? (
-          collaborations.events.map((event) => (
-            <div
-              key={event.collaboration_id}
-              className="border p-4 mb-4 rounded-lg flex justify-between items-center"
-            >
-              <div>
-                <h3 className="font-semibold">{event.event_name}</h3>
-                <p>{event.description}</p>
-                <div className="text-sm text-gray-600">
-                  <strong>Status:</strong> {event.collaboration_status}
-                </div>
-                <div className="text-sm text-gray-600">
-                  <strong>Collaborating Commune:</strong>{" "}
-                  {event.collaborating_commune_name}
-                </div>
-              </div>
-              <button
-                className="bg-red-500 text-white px-4 py-2 rounded"
-                onClick={() => handleDeleteCollaborationEvent(event.event_id)}
+        {/* Posts Section */}
+        <section>
+          <h2 className="text-xl font-semibold mb-2">Posts</h2>
+          {collaborations.posts.length > 0 ? (
+            collaborations.posts.map((post) => (
+              <div
+                key={post.collaboration_id}
+                className="border p-4 mb-4 rounded-lg flex justify-between items-center"
               >
-                Delete
-              </button>
-            </div>
-          ))
-        ) : (
-          <p>No pending or rejected event collaborations.</p>
-        )}
-      </section>
-    </div>
+                <div>
+                  <h3 className="font-semibold">{post.title}</h3>
+                  <p>{post.description}</p>
+                  <div className="text-sm text-gray-600">
+                    <strong>Status:</strong> {post.collaboration_status}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <strong>Collaborating Commune:</strong>{" "}
+                    {post.collaborating_commune_name}
+                  </div>
+                </div>
+                <button
+                  className="bg-red-500 text-white px-4 py-2 rounded"
+                  onClick={() => handleDeleteCollaborationPost(post.post_id)}
+                >
+                  Delete
+                </button>
+              </div>
+            ))
+          ) : (
+            <p>No pending or rejected post collaborations.</p>
+          )}
+        </section>
+
+        {/* Events Section */}
+        <section className="mt-6">
+          <h2 className="text-xl font-semibold mb-2">Events</h2>
+          {collaborations.events.length > 0 ? (
+            collaborations.events.map((event) => (
+              <div
+                key={event.collaboration_id}
+                className="border p-4 mb-4 rounded-lg flex justify-between items-center"
+              >
+                <div>
+                  <h3 className="font-semibold">{event.event_name}</h3>
+                  <p>{event.description}</p>
+                  <div className="text-sm text-gray-600">
+                    <strong>Status:</strong> {event.collaboration_status}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <strong>Collaborating Commune:</strong>{" "}
+                    {event.collaborating_commune_name}
+                  </div>
+                </div>
+                <button
+                  className="bg-red-500 text-white px-4 py-2 rounded"
+                  onClick={() => handleDeleteCollaborationEvent(event.event_id)}
+                >
+                  Delete
+                </button>
+              </div>
+            ))
+          ) : (
+            <p>No pending or rejected event collaborations.</p>
+          )}
+        </section>
+      </div>
+    </Layout>
   );
 };
 

@@ -219,6 +219,7 @@ function Navbar() {
         </div>
       )}
       {!location.pathname.startsWith("/commune/") &&
+        !location.pathname.startsWith("/chat") &&
         !location.pathname.startsWith("/market/") && (
           <Link to={user ? "/createcommune" : "/login"}>
             <div className="fixed bottom-6 right-6 bg-indigo-600 text-white rounded-full p-2 space-x-1  shadow-lg flex items-center justify-center cursor-pointer hover:bg-indigo-700 transition-all z-50">

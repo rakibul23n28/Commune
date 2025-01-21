@@ -29,16 +29,18 @@ CREATE TABLE communes (
     FOREIGN KEY (admin_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- Table for Commune Memberships
+-- Updated Table for Commune Memberships
 CREATE TABLE commune_memberships (
     membership_id INT AUTO_INCREMENT PRIMARY KEY,
     commune_id INT NOT NULL,
     user_id INT NOT NULL,
     role ENUM('admin', 'moderator', 'member') DEFAULT 'member',
+    join_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (commune_id) REFERENCES communes(commune_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
 
 -- Table for Posts
 CREATE TABLE posts (

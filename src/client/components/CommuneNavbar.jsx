@@ -33,12 +33,16 @@ const CommuneNavbar = ({ name = "" }) => {
   const handleNavigation = (option) => {
     if (option === "profile") {
       navigate(`/commune/${communeid}`);
-    } else if (option === "sentRequests") {
-      navigate(`/commune/${communeid}/requests`);
+    } else if (option === "collaboration-requests") {
+      navigate(`/commune/${communeid}/collaboration-requests`);
     } else if (option === "settings") {
       navigate(`/commune/${communeid}/settings`);
     } else if (option === "PendingRequests") {
       navigate(`/commune/${communeid}/pending`);
+    } else if (option === "members") {
+      navigate(`/commune/${communeid}/members`);
+    } else if (option === "join-users") {
+      navigate(`/commune/${communeid}/join-members`);
     }
   };
 
@@ -59,15 +63,29 @@ const CommuneNavbar = ({ name = "" }) => {
             <i className="fas fa-user mr-2"></i>
             {name.length > 30 ? `${name.slice(0, 30)}...` : name}
           </button>
+          <button
+            onClick={() => handleNavigation("members")}
+            className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
+          >
+            <i class="fa-solid fa-users-gear mr-2"></i>
+            Members
+          </button>
           {(membershipStatus === "admin" ||
             membershipStatus === "moderator") && (
             <>
               <button
-                onClick={() => handleNavigation("sentRequests")}
+                onClick={() => handleNavigation("collaboration-requests")}
                 className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
               >
                 <i className="fas fa-paper-plane mr-2"></i>
-                Requests
+                Collaboration
+              </button>
+              <button
+                onClick={() => handleNavigation("join-users")}
+                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
+              >
+                <i className="fas fa-paper-plane mr-2"></i>
+                Join Users
               </button>
               <button
                 onClick={() => handleNavigation("PendingRequests")}

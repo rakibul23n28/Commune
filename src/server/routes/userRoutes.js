@@ -32,9 +32,10 @@ router.put(
   upload.single("profile_image"),
   updateUser
 );
+
+router.get("/communes/info/:userId", userCommunesInfo);
 router.get("/profile/:username", getUserByUsername);
 router.get("/:id", getUser);
-router.get("/communes/info/:userId", userCommunesInfo);
 
 // Add the multer middleware to handle file upload on the /update route
 

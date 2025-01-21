@@ -40,12 +40,19 @@ import CommuneProduct from "./pages/communeProduct";
 import CollaborationPostPage from "./pages/CollaborationPostPage";
 import CollaborationListPage from "./pages/CollaborationListPage";
 import CollaborationRequests from "./pages/CollaborationRequests";
+
+//nav
+import CommuneMembers from "./pages/CommuneMembers";
+import CommuneJoinMember from "./pages/CommuneJoinMember";
 // Utils
 import RedirectIfAuthenticated from "./utils/RedirectIfAuthenticated";
 import AdminModeratorProtected from "./utils/AdminModeratorProtected";
 
 //admin
 import CommuneSendRequest from "./pages/CommuneSendRequest";
+
+//chat
+import ChatPage from "./pages/ChatPage";
 
 const App = () => (
   <AuthProvider>
@@ -139,7 +146,7 @@ const App = () => (
 
                 {/* //Admin Collaborate */}
                 <Route
-                  path=":communeid/requests"
+                  path=":communeid/collaboration-requests"
                   element={
                     <ProtectedRoute>
                       <AdminModeratorProtected>
@@ -161,6 +168,19 @@ const App = () => (
                 />
 
                 <Route
+                  path=":communeid/join-members"
+                  element={
+                    <ProtectedRoute>
+                      <AdminModeratorProtected>
+                        <CommuneJoinMember />
+                      </AdminModeratorProtected>
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route path=":communeid/members" element={<CommuneMembers />} />
+
+                <Route
                   path="edit/:communeid/:listid/list"
                   element={
                     <ProtectedRoute>
@@ -180,6 +200,14 @@ const App = () => (
                 />
               </Routes>
             </CommuneMembershipProvider>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
           }
         />
 

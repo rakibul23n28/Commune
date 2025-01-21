@@ -32,7 +32,7 @@ const ViewCommune = () => {
       try {
         const response = await axios.get(`/api/commune/communes/${communeid}`);
         setCommune(response.data.commune);
-        setReviews(response.data.reviews || []);
+        setReviews(response.data.reviews);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load commune data");
       } finally {
@@ -87,17 +87,32 @@ const ViewCommune = () => {
         {
           review_text: newReview,
           rating,
-          user_id: user.id,
         },
         {
           headers: getAuthHeaders(),
         }
       );
+
       setReviews([response.data.review, ...reviews]); // Add new review at the top
       setNewReview(""); // Clear review input
       setRating(1); // Reset rating
     } catch (err) {
+      if (err.response?.data?.msg) {
+        alert(err.response?.data?.msg);
+      }
       setError(err.response?.data?.message || "Failed to submit review.");
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    try {
+      await axios.delete(`/api/commune/reviews/${reviewId}`, {
+        headers: getAuthHeaders(),
+      });
+      setReviews(reviews.filter((review) => review.review_id !== reviewId));
+      alert("Review deleted successfully.");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete review.");
     }
   };
 
@@ -220,11 +235,17 @@ const ViewCommune = () => {
         </div>
 
         <div>
-          {reviews[0].reviewer_username ||
-          (reviews.length > 1 && reviews.length > 0) ? (
-            reviews.map((review, index) => (
-              <div key={index} className="border-b pb-4 mb-4">
-                <p className="text-lg font-semibold">{review.username}</p>
+          {reviews.length > 0 ? (
+            reviews.map((review) => (
+              <div key={review.review_id} className="border-b pb-4 mb-4">
+                <div className="flex items-center">
+                  <img
+                    src={review.profile_image}
+                    alt={review.username}
+                    className="w-10 h-10 rounded-full mr-2"
+                  />
+                  <p className="text-lg font-semibold">{review.username}</p>
+                </div>
                 <div className="flex items-center space-x-2">
                   {renderStars(review.rating)}
                 </div>
@@ -232,6 +253,16 @@ const ViewCommune = () => {
                 <p className="text-gray-600 mt-2">
                   {timeAgo(review.created_at)}
                 </p>
+                {/* Delete button */}
+
+                {user?.id === review.user_id && (
+                  <button
+                    onClick={() => handleDeleteReview(review.review_id)}
+                    className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             ))
           ) : (

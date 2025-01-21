@@ -37,8 +37,22 @@ export const createCommune = async (req, res) => {
 
     // Add the creator as the admin in the memberships table
     await pool.query(
-      `INSERT INTO commune_memberships (commune_id, user_id, role) VALUES (?, ?, 'admin')`,
+      `INSERT INTO commune_memberships (commune_id, user_id, role, join_status) VALUES (?, ?, 'admin', 'approved')`,
       [commune_id, admin_id]
+    );
+
+    //create a chats for commune
+    const [chat] = await pool.query(
+      `INSERT INTO chats (commune_id, chat_name) VALUES (?, ?)`,
+      [commune_id, name]
+    );
+
+    console.log(chat.insertId);
+
+    //insert the admin as chat_participants
+    await pool.query(
+      `INSERT INTO chat_participants (chat_id, user_id) VALUES (?, ?)`,
+      [chat.insertId, admin_id]
     );
 
     // Commit the transaction
@@ -78,9 +92,13 @@ export const getUserCommunesByCommuneId = async (req, res) => {
       `SELECT communes.*, 
               commune_reviews.rating,
               commune_reviews.review_text,
-              commune_reviews.created_at AS review_created_at,
-              reviewer.username AS reviewer_username,
-              reviewer.profile_image AS reviewer_profile_image
+              commune_reviews.review_id,
+              commune_reviews.created_at ,
+              reviewer.username,
+              reviewer.profile_image,
+              (SELECT COUNT(*) FROM commune_reviews WHERE commune_id = communes.commune_id) AS review_count,
+              reviewer.user_id
+
        FROM communes
        LEFT JOIN commune_reviews ON communes.commune_id = commune_reviews.commune_id
        LEFT JOIN users AS reviewer ON commune_reviews.user_id = reviewer.user_id
@@ -90,11 +108,14 @@ export const getUserCommunesByCommuneId = async (req, res) => {
 
     const commune = result[0];
     const reviews = result.map((review) => ({
-      reviewer_username: review.reviewer_username,
-      reviewer_profile_image: review.reviewer_profile_image,
+      username: review.username,
+      profile_image: review.profile_image,
       rating: review.rating,
+      review_id: review.review_id,
       review_text: review.review_text,
-      created_at: review.review_created_at,
+      created_at: review.created_at,
+      user_id: review.user_id,
+      review_count: review.review_count,
     }));
 
     res.json({ commune: commune, reviews: reviews });
@@ -199,6 +220,12 @@ export const updateCommune = async (req, res) => {
       [communeId]
     );
     const updatedCommune = updatedCommuneData[0];
+
+    //change chats name
+    await pool.query("UPDATE Chats SET chat_name = ? WHERE commune_id = ?", [
+      name,
+      communeId,
+    ]);
 
     res.json({
       msg: "Commune updated successfully",
@@ -527,6 +554,124 @@ export const joinCommune = async (req, res) => {
   }
 };
 
+export const leaveCommune = async (req, res) => {
+  const communeId = req.params.communeId;
+  const userId = req.user.id;
+
+  try {
+    const [result] = await pool.query(
+      "DELETE FROM commune_memberships WHERE commune_id = ? AND user_id = ?",
+      [communeId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ message: "User is not a member of this commune" });
+    }
+
+    return res.status(200).json({ message: "Successfully left the commune" });
+  } catch (err) {
+    console.error("Error leaving commune:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getCommuneMembers = async (req, res) => {
+  try {
+    const { communeId } = req.params;
+
+    const [members] = await pool.query(
+      `SELECT u.user_id, u.username, u.profile_image, cm.role, cm.joined_at
+         FROM commune_memberships cm
+         JOIN users u ON cm.user_id = u.user_id
+         WHERE cm.join_status = 'approved' AND cm.commune_id = ?`,
+      [communeId]
+    );
+
+    res.status(200).json({ members });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const getJoinRequestsMembers = async (req, res) => {
+  try {
+    const { communeId } = req.params;
+
+    const [members] = await pool.query(
+      `SELECT u.user_id, u.username, u.profile_image, cm.joined_at, cm.join_status,cm.membership_id
+         FROM commune_memberships cm
+         JOIN users u ON cm.user_id = u.user_id
+         WHERE cm.commune_id = ? AND cm.join_status = 'pending'`,
+      [communeId]
+    );
+
+    res.status(200).json({ members });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const updateCommuneMembership = async (req, res) => {
+  try {
+    const { membershipId } = req.params;
+    const { status } = req.body;
+
+    const [result] = await pool.query(
+      "UPDATE commune_memberships SET join_status = ? WHERE membership_id = ?",
+      [status, membershipId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Membership not found" });
+    }
+
+    res.status(200).json({ message: "Membership updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const addChatParticipants = async (req, res) => {
+  const { chatId } = req.params; // Use chat_id directly from the route
+  const { userIds } = req.body;
+
+  if (!Array.isArray(userIds) || userIds.length === 0) {
+    return res.status(400).json({ message: "Invalid user IDs provided." });
+  }
+
+  try {
+    // Check if the chat exists
+    const [existingChat] = await pool.query(
+      "SELECT chat_id FROM chats WHERE chat_id = ?",
+      [chatId]
+    );
+
+    if (existingChat.length === 0) {
+      return res.status(404).json({ message: "Chat not found." });
+    }
+
+    // Add participants to the chat
+    const values = userIds.map((userId) => [chatId, userId]);
+    const placeholders = values.map(() => "(?, ?)").join(", ");
+    await pool.query(
+      `INSERT IGNORE INTO chat_participants (chat_id, user_id) VALUES ${placeholders}`,
+      values.flat()
+    );
+
+    res.status(200).json({ message: "Participants added successfully." });
+  } catch (error) {
+    console.error("Error adding chat participants:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while adding participants." });
+  }
+};
+
 export const getCommuneReviews = async (req, res) => {
   const communeId = req.params.commune_id;
 
@@ -560,8 +705,10 @@ export const getCommuneReviews = async (req, res) => {
 
 export const setCommuneReview = async (req, res) => {
   const { communeid } = req.params;
-  const { review_text, rating, user_id } = req.body;
+  const { review_text, rating } = req.body;
+  const user_id = req.user?.id;
 
+  // Validate input
   if (!review_text || !rating || !user_id) {
     return res.status(400).json({ msg: "All fields are required." });
   }
@@ -571,6 +718,18 @@ export const setCommuneReview = async (req, res) => {
   }
 
   try {
+    // Check if user has already reviewed this commune
+    const [existingReview] = await pool.query(
+      "SELECT * FROM commune_reviews WHERE commune_id = ? AND user_id = ?",
+      [communeid, user_id]
+    );
+
+    if (existingReview.length > 0) {
+      return res
+        .status(400)
+        .json({ msg: "You have already reviewed this commune." });
+    }
+
     // Insert the new review into the database
     const [result] = await pool.query(
       `INSERT INTO commune_reviews (commune_id, user_id, rating, review_text)
@@ -578,21 +737,74 @@ export const setCommuneReview = async (req, res) => {
       [communeid, user_id, rating, review_text]
     );
 
-    // Return a success response
+    if (result.affectedRows === 0) {
+      return res.status(500).json({ msg: "Failed to add review." });
+    }
+
+    // Retrieve the newly inserted review with additional user details
+    const [review] = await pool.query(
+      `SELECT 
+          commune_reviews.review_id,
+          commune_reviews.created_at,
+          commune_reviews.rating,
+          commune_reviews.review_text,
+          users.username,
+          users.profile_image 
+       FROM commune_reviews 
+       JOIN users ON commune_reviews.user_id = users.user_id 
+       WHERE commune_reviews.review_id = ?`,
+      [result.insertId]
+    );
+
+    if (review.length === 0) {
+      return res
+        .status(500)
+        .json({ msg: "Failed to retrieve the new review." });
+    }
+
+    // Return a success response with the newly created review
     res.status(201).json({
-      msg: "Review added successfully",
+      msg: "Review added successfully.",
       review: {
-        review_id: result.insertId,
-        commune_id: communeid,
+        review_id: review[0].review_id,
         user_id: user_id,
-        rating,
-        review_text,
-        created_at: new Date().toISOString(), // Using current timestamp for demo
+        username: review[0].username,
+        profile_image: review[0].profile_image,
+        rating: review[0].rating,
+        review_text: review[0].review_text,
+        created_at: review[0].created_at,
       },
     });
   } catch (err) {
     console.error("Failed to add review:", err);
-    res.status(500).json({ msg: "Error adding review" });
+    res.status(500).json({ msg: "Error adding review." });
+  }
+};
+
+export const deleteCommuneReview = async (req, res) => {
+  const { reviewid } = req.params;
+
+  try {
+    // Check if the review exists
+    const [review] = await pool.query(
+      "SELECT * FROM commune_reviews WHERE review_id = ?",
+      [reviewid]
+    );
+
+    if (review.length === 0) {
+      return res.status(404).json({ msg: "Review not found" });
+    }
+
+    // Delete the review from the database
+    await pool.query("DELETE FROM commune_reviews WHERE review_id = ?", [
+      reviewid,
+    ]);
+
+    // Return a success response
+    res.status(200).json({ msg: "Review deleted successfully" });
+  } catch (err) {
+    console.error("Failed to delete review:", err);
+    res.status(500).json({ msg: "Error deleting review" });
   }
 };
 

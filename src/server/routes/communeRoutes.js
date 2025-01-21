@@ -12,9 +12,18 @@ import {
   deleteCommune,
   getCommuneUserStatus,
   getJoinedCommunes,
+  //commune
   joinCommune,
+  leaveCommune,
+  //members
+  getCommuneMembers,
+  getJoinRequestsMembers,
+  updateCommuneMembership,
+  addChatParticipants,
+  //reviews
   getCommuneReviews,
   setCommuneReview,
+  deleteCommuneReview,
   //posts
   createCommunePostBlog,
   getCommunePosts,
@@ -127,6 +136,21 @@ router.delete("/event/:eventid", validateToken, deleteCommuneEvent);
 router.get("/list/:listid", getCommuneListing);
 router.put("/list/:listid", validateToken, updateCommuneListing);
 router.delete("/list/:listid", validateToken, deleteCommuneListing);
+//members
+
+router.get("/commune-members/:communeId", getCommuneMembers);
+router.get("/join-requests/:communeId", getJoinRequestsMembers);
+router.patch(
+  "/join-status/:membershipId",
+  validateToken,
+  updateCommuneMembership
+);
+// Example route to add participants
+router.post(
+  "/add-chat-participants/:chatId",
+  validateToken,
+  addChatParticipants
+);
 
 //product
 
@@ -140,6 +164,7 @@ router.get("/:communeid/lists", getCommuneListings);
 router.get("/:username", getUserCommunes);
 // Route to add a review to a commune
 router.post("/:communeid/reviews", validateToken, setCommuneReview);
+router.delete("/reviews/:reviewid", validateToken, deleteCommuneReview);
 // POST route to create a new post (listing)
 router.post(
   "/create/:communeid/listings",
@@ -189,6 +214,7 @@ router.post(
 );
 
 router.post("/membership/:communeId/join", validateToken, joinCommune);
+router.delete("/membership/:communeId/delete", validateToken, leaveCommune);
 router.delete("/delete/:communeid", validateToken, deleteCommune);
 
 // Route: GET /api/commune/:communeId/:userId
