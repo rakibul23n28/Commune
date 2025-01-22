@@ -46,7 +46,7 @@ export const register = async (req, res) => {
     );
     if (existingUser.length > 0) {
       return res.status(400).json({
-        msg: "Email or username is already registered",
+        msg: "Email is already registered",
         success: false,
       });
     }

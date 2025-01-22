@@ -14,7 +14,6 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const { data } = await axios.post("/api/auth/login", { email, password });
-      console.log("Backend response:", data);
 
       // Store user and token in localStorage
       const userWithToken = { ...data.user, token: data.token };
@@ -37,6 +36,7 @@ export const AuthProvider = ({ children }) => {
       await axios.post("/api/auth/logout", {});
       setUser(null);
       localStorage.removeItem("user");
+      location.href = "/login";
     } catch (error) {
       console.error("Error during logout:", error);
     }

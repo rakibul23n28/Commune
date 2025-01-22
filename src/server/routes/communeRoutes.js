@@ -119,6 +119,7 @@ export const uploadEvent = multer({
 
 // Example route for fetching user's communes
 router.get("/all", getAllCommunes);
+router.get("/:username", getUserCommunes);
 
 // router.get("/communes/c/:communeid", getCommunesByCommuneId);
 router.get("/joined/:userId", validateToken, getJoinedCommunes);
@@ -161,7 +162,6 @@ router.get("/:communeid/products", getCommuneProducts);
 //list
 router.get("/:communeid/lists", getCommuneListings);
 
-router.get("/:username", getUserCommunes);
 // Route to add a review to a commune
 router.post("/:communeid/reviews", validateToken, setCommuneReview);
 router.delete("/reviews/:reviewid", validateToken, deleteCommuneReview);

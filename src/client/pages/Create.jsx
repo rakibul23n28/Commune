@@ -50,6 +50,12 @@ const Create = () => {
         formDataToSend.append(key, formData[key]);
       }
 
+      // alart if no commune image is selected
+      if (!formDataToSend.get("commune_image")) {
+        alert("Please select a commune image.");
+        return;
+      }
+
       const response = await axios.post("/api/commune/create", formDataToSend, {
         headers: {
           Authorization: `Bearer ${user.token}`,
@@ -66,7 +72,7 @@ const Create = () => {
 
   return (
     <Layout>
-      <div className="w-1/2 mx-auto p-6 bg-white rounded-lg shadow-md">
+      <div className="max-w-[50rem] w-full mx-auto p-4  bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">
           Create a Commune
         </h2>
@@ -130,7 +136,7 @@ const Create = () => {
             <label className="block text-gray-700 font-medium mb-2">
               Content
             </label>
-            <div className="h-96 bg-gray-50 rounded-lg overflow-hidden shadow-inner">
+            <div className="h-96 w-full max-w-3xl bg-gray-50 rounded-lg overflow-hidden shadow-inner">
               <QuillEditor
                 value={formData.content}
                 onChange={handleQuillChange}

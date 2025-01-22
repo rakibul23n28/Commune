@@ -4,14 +4,18 @@ import { useCommuneMembership } from "../context/CommuneMembershipContext";
 import { useAuth } from "../context/AuthContext";
 
 const CommuneNavbar = ({ name = "" }) => {
-  // Default name to an empty string
   const navigate = useNavigate();
-  const { communeid } = useParams(); // Get the commune ID from the URL
-  const [searchQuery, setSearchQuery] = useState(""); // To manage the search input
-
+  const { communeid } = useParams();
+  const [searchQuery, setSearchQuery] = useState("");
   const { fetchMembershipStatus } = useCommuneMembership();
   const [membershipStatus, setMembershipStatus] = useState(null);
   const { user } = useAuth();
+  const [error, setError] = useState(null);
+
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showCollaborationDropdown, setShowCollaborationDropdown] =
+    useState(false);
+  const [showSettingsPopup, setShowSettingsPopup] = useState(false);
 
   useEffect(() => {
     const fetchUserMembership = async () => {
@@ -30,25 +34,12 @@ const CommuneNavbar = ({ name = "" }) => {
     }
   }, [communeid, user?.id]);
 
-  const handleNavigation = (option) => {
-    if (option === "profile") {
-      navigate(`/commune/${communeid}`);
-    } else if (option === "collaboration-requests") {
-      navigate(`/commune/${communeid}/collaboration-requests`);
-    } else if (option === "settings") {
-      navigate(`/commune/${communeid}/settings`);
-    } else if (option === "PendingRequests") {
-      navigate(`/commune/${communeid}/pending`);
-    } else if (option === "members") {
-      navigate(`/commune/${communeid}/members`);
-    } else if (option === "join-users") {
-      navigate(`/commune/${communeid}/join-members`);
-    }
+  const handleNavigation = (path) => {
+    navigate(path);
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Navigate to a search results page or filter the current data (you can customize this logic)
     navigate(`/search?query=${searchQuery}`);
   };
 
@@ -57,51 +48,125 @@ const CommuneNavbar = ({ name = "" }) => {
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex space-x-4">
           <button
-            onClick={() => handleNavigation("profile")}
+            onClick={() => handleNavigation(`/commune/${communeid}`)}
             className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
           >
             <i className="fas fa-user mr-2"></i>
             {name.length > 30 ? `${name.slice(0, 30)}...` : name}
           </button>
-          <button
-            onClick={() => handleNavigation("members")}
-            className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
-          >
-            <i class="fa-solid fa-users-gear mr-2"></i>
-            Members
-          </button>
+          {membershipStatus && (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserDropdown((prevState) => !prevState)}
+                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
+              >
+                <i className="fas fa-users mr-2"></i>
+                User
+              </button>
+              {showUserDropdown && (
+                <div className="absolute bg-white text-black shadow-md rounded-md mt-2 w-48">
+                  <button
+                    onClick={() =>
+                      handleNavigation(`/commune/${communeid}/join-members`)
+                    }
+                    className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
+                  >
+                    <i className="fas fa-user-plus mr-2 text-blue-600"></i>
+                    Join User
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleNavigation(`/commune/${communeid}/members`)
+                    }
+                    className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
+                  >
+                    <i className="fas fa-users mr-2 text-green-600"></i>
+                    Members
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleNavigation(`/commune/${communeid}/manage-members`)
+                    }
+                    className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
+                  >
+                    <i className="fas fa-users-cog mr-2 text-red-600"></i>
+                    Manage Members
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           {(membershipStatus === "admin" ||
             membershipStatus === "moderator") && (
-            <>
+            <div className="relative">
               <button
-                onClick={() => handleNavigation("collaboration-requests")}
+                onClick={() =>
+                  setShowCollaborationDropdown((prevState) => !prevState)
+                }
                 className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
               >
-                <i className="fas fa-paper-plane mr-2"></i>
+                <i className="fas fa-handshake mr-2"></i>
                 Collaboration
               </button>
+              {showCollaborationDropdown && (
+                <div className="absolute bg-white text-black shadow-md rounded-md mt-2 w-48">
+                  <button
+                    onClick={() =>
+                      handleNavigation(
+                        `/commune/${communeid}/collaboration-requests`
+                      )
+                    }
+                    className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
+                  >
+                    <i className="fas fa-paper-plane mr-2 text-purple-600"></i>
+                    Collaboration Requests
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleNavigation(`/commune/${communeid}/pending`)
+                    }
+                    className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
+                  >
+                    <i className="fas fa-spinner fa-spin mr-2 text-red-600"></i>
+                    Pending Requests
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          {(membershipStatus === "admin" ||
+            membershipStatus === "moderator") && (
+            <div className="relative">
               <button
-                onClick={() => handleNavigation("join-users")}
-                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
-              >
-                <i className="fas fa-paper-plane mr-2"></i>
-                Join Users
-              </button>
-              <button
-                onClick={() => handleNavigation("PendingRequests")}
-                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
-              >
-                <i className="fas fa-spinner fa-spin mr-2"></i>
-                Pending
-              </button>
-              <button
-                onClick={() => handleNavigation("settings")}
+                onClick={() => setShowSettingsPopup((prevState) => !prevState)}
                 className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
               >
                 <i className="fas fa-cog mr-2"></i>
                 Settings
               </button>
-            </>
+              {showSettingsPopup && (
+                <div className="absolute bg-white text-black shadow-md rounded-md mt-2 w-48">
+                  <button
+                    onClick={() =>
+                      handleNavigation(`/editcommune/${communeid}`)
+                    }
+                    className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
+                  >
+                    <i className="fas fa-edit mr-2 text-orange-600"></i>
+                    Edit
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleNavigation(`/commune/${communeid}/manage`)
+                    }
+                    className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
+                  >
+                    <i className="fas fa-sliders-h mr-2 text-teal-600"></i>
+                    Manage
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
         <form onSubmit={handleSearch} className="flex items-center space-x-2">

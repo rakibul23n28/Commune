@@ -107,6 +107,7 @@ export const getUserCommunesByCommuneId = async (req, res) => {
     );
 
     const commune = result[0];
+
     const reviews = result.map((review) => ({
       username: review.username,
       profile_image: review.profile_image,
@@ -117,6 +118,9 @@ export const getUserCommunesByCommuneId = async (req, res) => {
       user_id: review.user_id,
       review_count: review.review_count,
     }));
+    if (!commune) {
+      return res.status(404).json({ msg: "Commune not found" });
+    }
 
     res.json({ commune: commune, reviews: reviews });
   } catch (err) {
@@ -259,6 +263,7 @@ export const getAllCommunes = async (req, res) => {
       LEFT JOIN (
           SELECT commune_id, COUNT(membership_id) AS total_joined_users
           FROM commune_memberships
+          WHERE join_status = 'approved'
           GROUP BY commune_id
       ) cm ON c.commune_id = cm.commune_id;
     `;
@@ -400,7 +405,7 @@ export const getCommuneSmallInfo = async (req, res) => {
 
   try {
     const [communes] = await pool.query(
-      "SELECT commune_id, name, commune_image, commune_type FROM Communes WHERE commune_id = ?",
+      "SELECT commune_id, name, commune_image, commune_type, privacy FROM Communes WHERE commune_id = ?",
       [communeId]
     );
 
@@ -438,7 +443,7 @@ export const getCommuneUserStatus = async (req, res) => {
         communes c ON cm.commune_id = c.commune_id
       JOIN 
         users u ON cm.user_id = u.user_id
-      WHERE 
+      WHERE cm.join_status = 'approved' AND
         cm.commune_id = ? AND cm.user_id = ?
       `,
       [communeId, userId]
@@ -521,6 +526,12 @@ export const joinCommune = async (req, res) => {
   const communeId = req.params.communeId;
   const userId = req.user.id;
 
+  //check commune privacy
+  const [commune] = await pool.query(
+    "SELECT privacy FROM communes WHERE commune_id = ?",
+    [communeId]
+  );
+
   // Check if the user is already a member
   const checkQuery = `
     SELECT * FROM commune_memberships
@@ -530,23 +541,38 @@ export const joinCommune = async (req, res) => {
   try {
     const [rows] = await pool.query(checkQuery, [communeId, userId]);
 
-    if (rows.length > 0) {
+    if (rows.length > 0 && rows[0].join_status === "approved") {
       return res
         .status(400)
         .json({ message: "User already a member of this commune" });
+    } else if (rows.length > 0 && rows[0].join_status === "pending") {
+      return res.status(400).json({ message: "Waiting for admin approval" });
+    } else if (rows.length > 0 && rows[0].join_status === "rejected") {
+      return res
+        .status(400)
+        .json({ message: "You have been rejected from this commune" });
     }
 
-    // Insert the new membership
-    const insertQuery = `
-      INSERT INTO commune_memberships (commune_id, user_id, role)
-      VALUES (?, ?, 'member')
+    let insertQuery = "";
+    if (commune[0].privacy !== "private") {
+      // Insert the new membership
+      insertQuery = `
+      INSERT INTO commune_memberships (commune_id, user_id, role, join_status)
+      VALUES (?, ?, 'member', 'approved')
     `;
+    } else {
+      // Insert the new membership
+      insertQuery = `
+      INSERT INTO commune_memberships (commune_id, user_id, role, join_status)
+      VALUES (?, ?, 'member', 'pending')
+    `;
+    }
 
     const [result] = await pool.query(insertQuery, [communeId, userId]);
 
     return res.status(200).json({
       message: "Successfully joined the commune",
-      data: { communeId, userId, role: "member" },
+      data: { communeId, userId, role: "member", status: "private" },
     });
   } catch (err) {
     console.error("Error joining commune:", err);

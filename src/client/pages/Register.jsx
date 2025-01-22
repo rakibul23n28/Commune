@@ -32,6 +32,7 @@ const Register = () => {
 
       try {
         const response = await axios.get(`/api/auth/exists/${username}`);
+
         if (response.data.exists) {
           setUsernameError("Username is already taken");
         } else {
@@ -82,9 +83,19 @@ const Register = () => {
       }
       navigate("/login");
     } catch (error) {
+      if (error.response?.data?.msg) {
+        setMessage(error.response.data.msg);
+      }
       console.error("Error during signup", error);
     }
   };
+
+  useEffect(() => {
+    if (passwordError) {
+      const timer = setTimeout(() => setPasswordError(null), 3000);
+      return () => clearTimeout(timer); // Cleanup
+    }
+  }, [passwordError]);
 
   const renderInputField = (id, label, value, setValue, type = "text") => (
     <div className="relative mb-4">

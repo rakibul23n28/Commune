@@ -75,11 +75,18 @@ export const CommuneMembershipProvider = ({ children }) => {
         }
       );
 
+      if (response.data.data.status === "private") {
+        alert("Private Commune wait until approved");
+      }
+
       const { role } = response.data.data; // Assume response contains the role
       updateMembership(communeId, role);
 
       return role; // Return role for further use if needed
     } catch (error) {
+      if (error.response && error.response.data?.message) {
+        alert(error.response.data.message);
+      }
       console.error("Error joining commune:", error);
       throw error; // Rethrow to handle in the calling component
     }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, Navigate } from "react-router-dom";
 import { useCommuneMembership } from "../context/CommuneMembershipContext";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
@@ -70,12 +70,19 @@ const FixedButtons = () => {
 
     try {
       await joinCommune(communeid, user?.id);
-      alert("You have successfully joined the commune!");
-      window.location.reload(); // Refresh to update membership status
+      window.location.reload();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to join commune.");
     }
   };
+
+  if (communeData?.privacy === "private") {
+    if (!getRole(communeid)) {
+      if (location.pathname !== `/commune/${communeid}`) {
+        return <Navigate to={`/commune/${communeid}`} replace />;
+      }
+    }
+  }
 
   const toggleCollaborationOptions = () => {
     setShowCollaborationOptions(!showCollaborationOptions);
@@ -160,19 +167,22 @@ const FixedButtons = () => {
               >
                 <i className="fas fa-pencil-alt text-indigo-600 mr-2"></i> Post
               </button>
-              <button
-                className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
-                onClick={() => handleActionClick("list")}
-              >
-                <i className="fas fa-list text-indigo-600 mr-2"></i> Listing
-              </button>
               {canCreateEvent && (
-                <button
-                  className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
-                  onClick={() => handleActionClick("event")}
-                >
-                  <i className="fas fa-calendar text-indigo-600 mr-2"></i> Event
-                </button>
+                <>
+                  <button
+                    className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+                    onClick={() => handleActionClick("list")}
+                  >
+                    <i className="fas fa-list text-indigo-600 mr-2"></i> Listing
+                  </button>
+                  <button
+                    className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+                    onClick={() => handleActionClick("event")}
+                  >
+                    <i className="fas fa-calendar text-indigo-600 mr-2"></i>{" "}
+                    Event
+                  </button>
+                </>
               )}
             </div>
           )}
