@@ -33,7 +33,7 @@ const UserCommunes = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-screen">
+        <div className="flex justify-center items-center">
           <p className="text-lg text-gray-600">Loading communes...</p>
         </div>
       </Layout>
@@ -44,7 +44,7 @@ const UserCommunes = () => {
   if (error) {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-screen">
+        <div className="flex justify-center items-center">
           <p className="text-lg text-red-600">{error}</p>
         </div>
       </Layout>

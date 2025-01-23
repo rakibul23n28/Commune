@@ -7,7 +7,8 @@ const CommuneNavbar = ({ name = "" }) => {
   const navigate = useNavigate();
   const { communeid } = useParams();
   const [searchQuery, setSearchQuery] = useState("");
-  const { fetchMembershipStatus } = useCommuneMembership();
+  const { fetchMembershipStatus, fetchCommuneData, communeData } =
+    useCommuneMembership();
   const [membershipStatus, setMembershipStatus] = useState(null);
   const { user } = useAuth();
   const [error, setError] = useState(null);
@@ -34,6 +35,27 @@ const CommuneNavbar = ({ name = "" }) => {
     }
   }, [communeid, user?.id]);
 
+  const [commune, setCommune] = useState(null);
+
+  useEffect(() => {
+    const loadCommuneData = async () => {
+      try {
+        if (!communeData) {
+          await fetchCommuneData(communeid);
+        }
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to load commune data");
+      }
+    };
+    loadCommuneData();
+  }, [communeid, communeData]);
+
+  useEffect(() => {
+    if (communeData) {
+      setCommune(communeData);
+    }
+  }, [communeData]);
+
   const handleNavigation = (path) => {
     navigate(path);
   };
@@ -46,12 +68,16 @@ const CommuneNavbar = ({ name = "" }) => {
   return (
     <div className="w-full bg-gray-800 text-white shadow-md sticky top-0 z-40">
       <div className="container mx-auto px-4 flex justify-between items-center">
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 items-center">
           <button
             onClick={() => handleNavigation(`/commune/${communeid}`)}
             className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
           >
-            <i className="fas fa-user mr-2"></i>
+            <img
+              src={commune?.commune_image}
+              alt={commune?.name}
+              className="h-8 w-8 border-2 rounded-lg object-cover mr-2"
+            />
             {name.length > 30 ? `${name.slice(0, 30)}...` : name}
           </button>
           {membershipStatus && (
@@ -67,15 +93,6 @@ const CommuneNavbar = ({ name = "" }) => {
                 <div className="absolute bg-white text-black shadow-md rounded-md mt-2 w-48">
                   <button
                     onClick={() =>
-                      handleNavigation(`/commune/${communeid}/join-members`)
-                    }
-                    className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
-                  >
-                    <i className="fas fa-user-plus mr-2 text-blue-600"></i>
-                    Join User
-                  </button>
-                  <button
-                    onClick={() =>
                       handleNavigation(`/commune/${communeid}/members`)
                     }
                     className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
@@ -83,15 +100,32 @@ const CommuneNavbar = ({ name = "" }) => {
                     <i className="fas fa-users mr-2 text-green-600"></i>
                     Members
                   </button>
-                  <button
-                    onClick={() =>
-                      handleNavigation(`/commune/${communeid}/manage-members`)
-                    }
-                    className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
-                  >
-                    <i className="fas fa-users-cog mr-2 text-red-600"></i>
-                    Manage Members
-                  </button>
+                  {(membershipStatus === "admin" ||
+                    membershipStatus === "moderator") && (
+                    <>
+                      <button
+                        onClick={() =>
+                          handleNavigation(`/commune/${communeid}/join-members`)
+                        }
+                        className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
+                      >
+                        <i className="fas fa-user-plus mr-2 text-blue-600"></i>
+                        Join User
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          handleNavigation(
+                            `/commune/${communeid}/manage-members`
+                          )
+                        }
+                        className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
+                      >
+                        <i className="fas fa-users-cog mr-2 text-red-600"></i>
+                        Manage Members
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -134,8 +168,7 @@ const CommuneNavbar = ({ name = "" }) => {
               )}
             </div>
           )}
-          {(membershipStatus === "admin" ||
-            membershipStatus === "moderator") && (
+          {membershipStatus === "admin" && (
             <div className="relative">
               <button
                 onClick={() => setShowSettingsPopup((prevState) => !prevState)}

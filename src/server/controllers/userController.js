@@ -55,6 +55,7 @@ export const updateUser = async (req, res) => {
       [userId]
     );
     const user = users[0];
+    profilePicUrl = user.profile_image;
 
     if (!user) {
       return res.status(404).json({ msg: "User not found" });

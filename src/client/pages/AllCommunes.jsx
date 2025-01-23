@@ -79,7 +79,7 @@ const AllCommunes = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-screen">
+        <div className="flex justify-center items-center ">
           <p className="text-lg text-gray-600">Loading communes...</p>
         </div>
       </Layout>
@@ -89,7 +89,7 @@ const AllCommunes = () => {
   if (error) {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-screen">
+        <div className="flex justify-center items-center">
           <p className="text-lg text-red-600">{error}</p>
         </div>
       </Layout>
@@ -147,10 +147,10 @@ const AllCommunes = () => {
                           ? commune.description
                           : commune.description.slice(0, 100) + "..."}
                       </td>
+                      <td className="px-4 py-2 border">{commune.privacy}</td>
                       <td className="px-4 py-2 border">
                         {commune.commune_type}
                       </td>
-                      <td className="px-4 py-2 border">{commune.privacy}</td>
                       <td className="px-4 py-2 border">{commune.location}</td>
                       <td className="px-4 py-2 border">
                         {commune.total_joined_users || 0}

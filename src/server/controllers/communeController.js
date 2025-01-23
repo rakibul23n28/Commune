@@ -355,12 +355,14 @@ export const getAllCommunes = async (req, res) => {
 //     res.status(500).json({ msg: "Server error during commune retrieval" });
 //   }
 // };
+
 export const deleteCommune = async (req, res) => {
   const communeId = req.params.communeid;
 
   try {
+    // Step 1: Check if the commune exists
     const [communes] = await pool.query(
-      "SELECT commune_image FROM Communes WHERE commune_id = ?",
+      "SELECT commune_image FROM communes WHERE commune_id = ?",
       [communeId]
     );
     const commune = communes[0];
@@ -369,7 +371,7 @@ export const deleteCommune = async (req, res) => {
       return res.status(404).json({ msg: "Commune not found" });
     }
 
-    // Delete the commune image if it exists
+    // Step 2: Delete the commune image if it exists
     if (commune.commune_image) {
       const imagePath = path.join(
         __dirname,
@@ -383,9 +385,31 @@ export const deleteCommune = async (req, res) => {
       });
     }
 
-    // Delete the commune from the database
+    // Step 3: Fetch related products
+    const [products] = await pool.query(
+      "SELECT product_image FROM products WHERE commune_id = ?",
+      [communeId]
+    );
+
+    // Step 4: Delete all product images
+    products.forEach((product) => {
+      if (product.product_image) {
+        const productImagePath = path.join(
+          __dirname,
+          "../../../",
+          product.product_image
+        );
+        fs.unlink(productImagePath, (err) => {
+          if (err) {
+            console.error("Failed to delete product image:", err);
+          }
+        });
+      }
+    });
+
+    // Step 5: Delete the commune (automatically cascades to products)
     const [result] = await pool.query(
-      "DELETE FROM Communes WHERE commune_id = ?",
+      "DELETE FROM communes WHERE commune_id = ?",
       [communeId]
     );
 
@@ -393,9 +417,12 @@ export const deleteCommune = async (req, res) => {
       return res.status(400).json({ msg: "Failed to delete commune" });
     }
 
-    res.json({ msg: "Commune deleted successfully", success: true });
+    res.json({
+      msg: "Commune and related products deleted successfully",
+      success: true,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Error during commune deletion:", error);
     res.status(500).json({ msg: "Server error during commune deletion" });
   }
 };
@@ -526,19 +553,23 @@ export const joinCommune = async (req, res) => {
   const communeId = req.params.communeId;
   const userId = req.user.id;
 
-  //check commune privacy
-  const [commune] = await pool.query(
-    "SELECT privacy FROM communes WHERE commune_id = ?",
-    [communeId]
-  );
-
-  // Check if the user is already a member
-  const checkQuery = `
-    SELECT * FROM commune_memberships
-    WHERE commune_id = ? AND user_id = ?
-  `;
-
   try {
+    // Check commune privacy
+    const [commune] = await pool.query(
+      "SELECT privacy FROM communes WHERE commune_id = ?",
+      [communeId]
+    );
+
+    if (commune.length === 0) {
+      return res.status(404).json({ message: "Commune not found" });
+    }
+
+    // Check if the user is already a member
+    const checkQuery = `
+      SELECT * FROM commune_memberships
+      WHERE commune_id = ? AND user_id = ?
+    `;
+
     const [rows] = await pool.query(checkQuery, [communeId, userId]);
 
     if (rows.length > 0 && rows[0].join_status === "approved") {
@@ -553,26 +584,40 @@ export const joinCommune = async (req, res) => {
         .json({ message: "You have been rejected from this commune" });
     }
 
-    let insertQuery = "";
-    if (commune[0].privacy !== "private") {
-      // Insert the new membership
-      insertQuery = `
-      INSERT INTO commune_memberships (commune_id, user_id, role, join_status)
-      VALUES (?, ?, 'member', 'approved')
-    `;
-    } else {
-      // Insert the new membership
-      insertQuery = `
-      INSERT INTO commune_memberships (commune_id, user_id, role, join_status)
-      VALUES (?, ?, 'member', 'pending')
-    `;
-    }
+    // Set membership to pending for private communes
+    const insertQuery = `
+        INSERT INTO commune_memberships (commune_id, user_id, role, join_status)
+        VALUES (?, ?, 'member', 'pending')
+      `;
 
-    const [result] = await pool.query(insertQuery, [communeId, userId]);
+    const [membershipResult] = await pool.query(insertQuery, [
+      communeId,
+      userId,
+    ]);
+
+    // If the commune is not private, add the user to the chat participants
+    if (commune[0].privacy !== "private") {
+      // Fetch the chat ID for the commune
+      const [chat] = await pool.query(
+        "SELECT chat_id FROM chats WHERE commune_id = ?",
+        [communeId]
+      );
+
+      if (chat.length > 0) {
+        const chatId = chat[0].chat_id;
+
+        // Add the user as a chat participant
+        const addParticipantQuery = `
+          INSERT INTO chat_participants (chat_id, user_id)
+          VALUES (?, ?)
+        `;
+        await pool.query(addParticipantQuery, [chatId, userId]);
+      }
+    }
 
     return res.status(200).json({
       message: "Successfully joined the commune",
-      data: { communeId, userId, role: "member", status: "private" },
+      data: { communeId, userId, role: "member", status: joinStatus },
     });
   } catch (err) {
     console.error("Error joining commune:", err);
@@ -646,6 +691,7 @@ export const updateCommuneMembership = async (req, res) => {
     const { membershipId } = req.params;
     const { status } = req.body;
 
+    // Update the membership status
     const [result] = await pool.query(
       "UPDATE commune_memberships SET join_status = ? WHERE membership_id = ?",
       [status, membershipId]
@@ -655,9 +701,43 @@ export const updateCommuneMembership = async (req, res) => {
       return res.status(404).json({ message: "Membership not found" });
     }
 
+    // If the status is approved, add the user as a chat participant
+    if (status === "approved") {
+      // Retrieve user ID and commune ID from the membership
+      const [membership] = await pool.query(
+        "SELECT user_id, commune_id FROM commune_memberships WHERE membership_id = ?",
+        [membershipId]
+      );
+
+      if (membership.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "Membership details not found" });
+      }
+
+      const { user_id: userId, commune_id: communeId } = membership[0];
+
+      // Retrieve the chat ID associated with the commune
+      const [chat] = await pool.query(
+        "SELECT chat_id FROM chats WHERE commune_id = ?",
+        [communeId]
+      );
+
+      if (chat.length > 0) {
+        const chatId = chat[0].chat_id;
+
+        // Add the user as a chat participant
+        const addParticipantQuery = `
+          INSERT IGNORE INTO chat_participants (chat_id, user_id)
+          VALUES (?, ?)
+        `;
+        await pool.query(addParticipantQuery, [chatId, userId]);
+      }
+    }
+
     res.status(200).json({ message: "Membership updated successfully" });
   } catch (error) {
-    console.error(error);
+    console.error("Error updating membership:", error);
     res.status(500).json({ error: "Server error" });
   }
 };

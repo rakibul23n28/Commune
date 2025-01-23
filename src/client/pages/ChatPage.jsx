@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import Layout from "../components/Layout";
 import { getAuthHeaders, timeAgo } from "../utils/Helper";
 import { Link } from "react-router-dom";
+import { io } from "socket.io-client";
+
 const ChatPage = () => {
   const { user } = useAuth();
   const [communes, setCommunes] = useState([]);
@@ -13,28 +15,52 @@ const ChatPage = () => {
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [selectedMembers, setSelectedMembers] = useState([]); // Track selected members
-
   const [isAddParticipantModalOpen, setIsAddParticipantModalOpen] =
     useState(false);
-  const [communeMembers, setCommuneMembers] = useState([]); // To store commune members
+  const [communeMembers, setCommuneMembers] = useState([]);
+  const [selectedMembers, setSelectedMembers] = useState([]);
 
-  // Ref for the message container
   const messageContainerRef = useRef(null);
+  const [socket, setSocket] = useState(null);
 
-  // Fetch user's chats on mount
+  // Initialize socket connection
+  useEffect(() => {
+    if (!user) return;
+
+    const socketInstance = io("http://localhost:5000", {
+      auth: { token: user?.token },
+    });
+
+    setSocket(socketInstance);
+
+    // Listen for incoming messages
+    socketInstance.on("newMessage", (message) => {
+      setMessages((prevMessages) => [...prevMessages, message]);
+
+      console.log(message);
+    });
+
+    return () => {
+      if (socketInstance) socketInstance.disconnect();
+    };
+  }, [user, selectedChat]);
+
+  // Fetch user's chats
   useEffect(() => {
     axios
       .get("/api/chat/my-chats", { headers: getAuthHeaders() })
       .then((response) => {
-        setCommunes(response.data.communes);
-        setIndividualChats(response.data.individualChats);
+        setCommunes(response.data.communes || []);
+        setIndividualChats(response.data.individualChats || []);
+      })
+      .catch((error) => {
+        console.error("Error fetching chats:", error);
       });
   }, []);
 
   // Fetch messages for the selected chat
   useEffect(() => {
-    if (selectedChat) {
+    if (selectedChat && socket) {
       axios
         .get(
           `/api/chat/messages/${selectedChat.type}/${
@@ -42,74 +68,73 @@ const ChatPage = () => {
               ? selectedChat.chat_id
               : selectedChat.id
           }`,
-          {
-            headers: getAuthHeaders(),
-          }
+          { headers: getAuthHeaders() }
         )
-        .then((response) => {
-          setMessages(response.data.messages);
-        });
-    }
-  }, [selectedChat]);
+        .then((response) => setMessages(response.data.messages || []))
+        .catch((error) => console.error("Error fetching messages:", error));
 
-  // Fetch commune members when Add Participant modal is opened
+      socket.emit("joinPrivateRoom", {
+        senderId: user.id,
+        receiverId:
+          selectedChat.type === "commune"
+            ? selectedChat.chat_id
+            : selectedChat.id,
+        chatType: selectedChat.type,
+      });
+      console.log(selectedChat, "selectedChat");
+    }
+  }, [selectedChat, socket]);
+
+  // Fetch commune members when the modal opens
   useEffect(() => {
     if (isAddParticipantModalOpen && selectedChat?.type === "commune") {
       axios
-        .get(`/api/commune/commune-members/${selectedChat.id}`)
-        .then((response) => {
-          setCommuneMembers(response.data.members);
-        });
+        .get(`/api/commune/commune-members/${selectedChat.id}`, {
+          headers: getAuthHeaders(),
+        })
+        .then((response) => setCommuneMembers(response.data.members || []))
+        .catch((error) => console.error("Error fetching members:", error));
     }
   }, [isAddParticipantModalOpen, selectedChat]);
 
-  // Scroll to the bottom automatically after a new message is sent
-  const scrollToBottom = () => {
+  // Scroll to bottom when messages change
+  useEffect(() => {
     if (messageContainerRef.current) {
       messageContainerRef.current.scrollTop =
         messageContainerRef.current.scrollHeight;
     }
-  };
-
-  // Scroll to bottom after messages change
-  useEffect(() => {
-    scrollToBottom();
   }, [messages]);
 
-  // Handle sending a new message
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
+  // Handle message sending
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || !selectedChat) return;
 
-    axios
-      .post(
-        `/api/chat/send-message`,
-        {
-          userId_to:
-            selectedChat.type === "commune"
-              ? selectedChat.chat_id
-              : selectedChat.id,
-          chatType: selectedChat.type,
-          message: newMessage,
-        },
-        { headers: getAuthHeaders() }
-      )
-      .then(() => {
-        setMessages([
-          ...messages,
-          {
-            sender_id: user.id,
-            message_text: newMessage,
-            created_at: new Date().toISOString(),
-            profile_image: user.profile_image,
-            username: user.username,
-          },
-        ]);
+    const messageData = {
+      chatType: selectedChat.type,
+      receiverId:
+        selectedChat.type === "commune"
+          ? selectedChat.chat_id
+          : selectedChat.id,
+      message_text: newMessage,
+      senderId: user.id,
+      created_at: new Date().toISOString(),
+      profile_image: user.profile_image,
+      username: user.username,
+    };
 
-        setNewMessage("");
-      });
+    socket.emit("sendMessage", messageData);
+
+    // console.log(messageData, "messageData");
+
+    // setMessages((prevMessages) => [
+    //   ...prevMessages,
+    //   { ...messageData, sender_id: user.id },
+    // ]);
+
+    setNewMessage("");
   };
 
-  // Handle searching for users
+  // Handle user search
   const handleSearch = () => {
     if (!searchQuery.trim()) return;
 
@@ -117,15 +142,16 @@ const ChatPage = () => {
       .get(`/api/chat/search?username=${searchQuery}`, {
         headers: getAuthHeaders(),
       })
-      .then((response) => {
-        setSearchResults(response.data.users);
-      });
+      .then((response) => setSearchResults(response.data.users || []))
+      .catch((error) => console.error("Error searching users:", error));
   };
 
-  // Handle Add Participant Modal toggle
+  // Add participant modal toggling
   const toggleAddParticipantModal = () => {
     setIsAddParticipantModalOpen(!isAddParticipantModalOpen);
   };
+
+  // Toggle member selection
   const toggleSelectMember = (userId) => {
     setSelectedMembers((prevSelected) =>
       prevSelected.includes(userId)
@@ -134,29 +160,26 @@ const ChatPage = () => {
     );
   };
 
+  // Save added participants
   const saveChanges = () => {
-    // Ensure there are selected members to add
     if (selectedMembers.length === 0) {
       alert("Please select at least one participant to add.");
       return;
     }
 
-    // Send the selected members to the backend
     axios
       .post(
         `/api/commune/add-chat-participants/${selectedChat.chat_id}`,
-        { userIds: selectedMembers }, // List of user IDs to add
+        { userIds: selectedMembers },
         { headers: getAuthHeaders() }
       )
-      .then((response) => {
-        // Successfully added participants
+      .then(() => {
         alert("Participants added successfully!");
-        // Optionally, you can fetch the updated commune members list
-        setIsAddParticipantModalOpen(false); // Close modal after saving
-        setSelectedMembers([]); // Clear selected members
+        setIsAddParticipantModalOpen(false);
+        setSelectedMembers([]);
       })
       .catch((error) => {
-        console.error("There was an error adding participants!", error);
+        console.error("Error adding participants:", error);
         alert("Failed to add participants. Please try again.");
       });
   };
@@ -301,12 +324,12 @@ const ChatPage = () => {
                   <div
                     key={index}
                     className={`mb-2 ${
-                      msg.sender_id === user.id ? "text-right" : "text-left"
+                      msg.senderId === user.id ? "text-right" : "text-left"
                     }`}
                   >
                     <div
                       className={`flex items-center  ${
-                        msg.sender_id === user.id
+                        msg.senderId === user.id
                           ? "justify-end"
                           : "justify-start"
                       }`}
@@ -329,7 +352,7 @@ const ChatPage = () => {
                         </div>
                         <h1
                           className={`inline-block px-4 max-w-96 py-2 rounded-lg ${
-                            msg.sender_id === user.id
+                            msg.senderId === user.id
                               ? "bg-blue-500 text-white"
                               : "bg-gray-200 text-black"
                           }`}
@@ -450,7 +473,7 @@ const ChatPage = () => {
                   className="flex-1 p-2 border rounded"
                 />
                 <button
-                  onClick={sendMessage}
+                  onClick={handleSendMessage}
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
                   Send

@@ -149,17 +149,15 @@ const FixedButtons = () => {
           <i className="fas fa-plus text-2xl"></i>
           {hover && (
             <div className="absolute bottom-20 right-0 bg-white shadow-lg rounded-lg p-4 text-black space-y-2">
-              {commune.commune_type === "ecommerce" &&
-                (getRole(communeid) === "admin" ||
-                  getRole(communeid) === "moderator") && (
-                  <button
-                    className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
-                    onClick={() => handleActionClick("product")}
-                  >
-                    <i className="fas fa-box-open text-indigo-600 mr-2"></i>
-                    Product
-                  </button>
-                )}
+              {commune.commune_type === "ecommerce" && (
+                <button
+                  className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+                  onClick={() => handleActionClick("product")}
+                >
+                  <i className="fas fa-box-open text-indigo-600 mr-2"></i>
+                  Product
+                </button>
+              )}
 
               <button
                 className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"

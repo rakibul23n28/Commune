@@ -52,6 +52,7 @@ import AdminModeratorProtected from "./utils/AdminModeratorProtected";
 import CommuneSendRequest from "./pages/CommuneSendRequest";
 
 //chat
+import { ChatProvider } from "./context/ChatContext";
 import ChatPage from "./pages/ChatPage";
 
 const App = () => (
@@ -118,9 +119,7 @@ const App = () => (
                   path="/create/:communeid/product"
                   element={
                     <ProtectedRoute>
-                      <AdminModeratorProtected>
-                        <CreateProduct />
-                      </AdminModeratorProtected>
+                      <CreateProduct />
                     </ProtectedRoute>
                   }
                 />

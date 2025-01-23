@@ -167,25 +167,27 @@ const Profile = () => {
                     <div className="flex flex-col mb-6">
                       {/* Commune Image and Name */}
                       <div className="flex items-center justify-between">
-                        <div className="flex gap-2 items-center">
-                          <img
-                            src={`${commune.commune_image}`}
-                            alt={commune.name}
-                            className="w-12 h-12 object-cover rounded-full"
-                          />
-                          {/* Commune meta information */}
-                          <div className="flex items-center justify-between  overflow-hidden">
-                            <div className="w-full pr-4">
-                              <h3 className="font-semibold text-lg truncate">
-                                {commune.name}
-                              </h3>
-                              <p className="text-gray-500 text-xs">
-                                {timeAgo(commune.created_at)} by{" "}
-                                {tempUser.username || "Admin"}
-                              </p>
+                        <Link to={`/commune/${commune.commune_id}`}>
+                          <div className="flex gap-2 items-center">
+                            <img
+                              src={`${commune.commune_image}`}
+                              alt={commune.name}
+                              className="w-12 h-12 object-cover rounded-full"
+                            />
+                            {/* Commune meta information */}
+                            <div className="flex items-center justify-between  overflow-hidden">
+                              <div className="w-full pr-4">
+                                <h3 className="font-semibold text-lg truncate">
+                                  {commune.name}
+                                </h3>
+                                <p className="text-gray-500 text-xs">
+                                  {timeAgo(commune.created_at)} by{" "}
+                                  {tempUser.username || "Admin"}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        </Link>
                         {commune.admin_id === user?.id && (
                           <div className="flex items-center justify-center space-x-6">
                             <Link to={`/editcommune/${commune.commune_id}`}>

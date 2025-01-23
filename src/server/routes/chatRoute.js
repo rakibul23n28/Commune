@@ -18,14 +18,28 @@ router.get("/my-chats", validateToken, async (req, res) => {
       [userId, userId, userId]
     );
 
-    // Fetch communes with user roles
     const [communes] = await pool.query(
-      `SELECT c.commune_id, c.name, cm.role, c.commune_image, ch.chat_id
-       FROM commune_memberships cm
-       JOIN communes c ON cm.commune_id = c.commune_id
-       JOIN chats ch ON c.commune_id = ch.commune_id
-       WHERE cm.user_id = ?`,
-      [userId]
+      `SELECT 
+          c.commune_id, 
+          c.name, 
+          cm.role, 
+          c.commune_image, 
+          ch.chat_id,
+          CASE 
+              WHEN cp.user_id IS NOT NULL THEN 1
+              ELSE 0
+          END AS is_chat_participant
+       FROM 
+          commune_memberships cm
+       JOIN 
+          communes c ON cm.commune_id = c.commune_id
+       JOIN 
+          chats ch ON c.commune_id = ch.commune_id
+       LEFT JOIN 
+          chat_participants cp ON ch.chat_id = cp.chat_id AND cp.user_id = ?
+       WHERE 
+          cm.user_id = ?`,
+      [userId, userId]
     );
 
     // Include the role in the response for communes
@@ -55,7 +69,7 @@ router.get("/messages/:type/:id", validateToken, async (req, res) => {
     if (type === "commune") {
       // Fetch messages for a commune chat
       const [rows] = await pool.query(
-        `SELECT m.message_id, m.sender_id, m.message_text, m.created_at, u.username , u.profile_image
+        `SELECT m.message_id, m.sender_id as senderId, m.message_text, m.created_at, u.username , u.profile_image
            FROM messages m
            JOIN users u ON m.sender_id = u.user_id
            WHERE m.chat_id = ? 
