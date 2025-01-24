@@ -47,21 +47,28 @@ import CommuneJoinMember from "./pages/CommuneJoinMember";
 // Utils
 import RedirectIfAuthenticated from "./utils/RedirectIfAuthenticated";
 import AdminModeratorProtected from "./utils/AdminModeratorProtected";
+import OnlyAdmin from "./utils/OnlyAdmin";
 
 //admin
 import CommuneSendRequest from "./pages/CommuneSendRequest";
+import CommuneMemberManagement from "./pages/CommuneMemberManagement";
 
 //chat
 import { ChatProvider } from "./context/ChatContext";
 import ChatPage from "./pages/ChatPage";
+
+//varify
+import VerifyAccount from "./pages/VerifyAccount";
 
 const App = () => (
   <AuthProvider>
     <Router>
       <Routes>
         {/* Public Routes */}
+        <Route path="/home2" element={<Home2 />} />
         <Route path="/" element={<Home />} />
         <Route path="/profile/:username" element={<Profile />} />
+        <Route path="/verify" element={<VerifyAccount />} />
 
         {/* Commune Routes (Wrapped with CommuneMembershipProvider) */}
         <Route
@@ -151,6 +158,16 @@ const App = () => (
                       <AdminModeratorProtected>
                         <CommuneSendRequest />
                       </AdminModeratorProtected>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path=":communeid/manage-members"
+                  element={
+                    <ProtectedRoute>
+                      <OnlyAdmin>
+                        <CommuneMemberManagement />
+                      </OnlyAdmin>
                     </ProtectedRoute>
                   }
                 />

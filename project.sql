@@ -13,6 +13,16 @@ CREATE TABLE users (
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Table for User Interests
+CREATE TABLE user_interests (
+    interest_id INT AUTO_INCREMENT PRIMARY KEY,      
+    user_id INT NOT NULL,                             
+    interest_name VARCHAR(255) NOT NULL,             
+ 
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE, 
+    UNIQUE (user_id, interest_name)
+);
+
 -- Table for Communes
 CREATE TABLE communes (
     commune_id INT AUTO_INCREMENT PRIMARY KEY,

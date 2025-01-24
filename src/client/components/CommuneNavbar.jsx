@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCommuneMembership } from "../context/CommuneMembershipContext";
 import { useAuth } from "../context/AuthContext";
+import { getAuthHeaders } from "../utils/Helper";
+import axios from "axios";
 
 const CommuneNavbar = ({ name = "" }) => {
   const navigate = useNavigate();
@@ -64,7 +66,31 @@ const CommuneNavbar = ({ name = "" }) => {
     e.preventDefault();
     navigate(`/search?query=${searchQuery}`);
   };
+  // Function to handle commune deletion
+  const handleDelete = async (commune_id, commune_name) => {
+    const communeName = prompt(
+      "Please enter the name of the commune to confirm deletion:"
+    );
+    if (communeName !== commune_name) {
+      alert("Commune name does not match. Deletion canceled.");
+      return;
+    }
 
+    console.log("Deleting commune with ID:", commune_id, commune_name);
+
+    try {
+      const response = await axios.delete(`/api/commune/delete/${commune_id}`, {
+        headers: getAuthHeaders(),
+      });
+      if (response.data.success) {
+        alert("Commune deleted successfully!");
+        navigate("/commune");
+      }
+    } catch (err) {
+      console.error("Failed to delete commune:", err);
+      alert("Failed to delete commune.");
+    }
+  };
   return (
     <div className="w-full bg-gray-800 text-white shadow-md sticky top-0 z-40">
       <div className="container mx-auto px-4 flex justify-between items-center">
@@ -112,18 +138,19 @@ const CommuneNavbar = ({ name = "" }) => {
                         <i className="fas fa-user-plus mr-2 text-blue-600"></i>
                         Join User
                       </button>
-
-                      <button
-                        onClick={() =>
-                          handleNavigation(
-                            `/commune/${communeid}/manage-members`
-                          )
-                        }
-                        className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
-                      >
-                        <i className="fas fa-users-cog mr-2 text-red-600"></i>
-                        Manage Members
-                      </button>
+                      {membershipStatus === "admin" && (
+                        <button
+                          onClick={() =>
+                            handleNavigation(
+                              `/commune/${communeid}/manage-members`
+                            )
+                          }
+                          className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
+                        >
+                          <i className="fas fa-users-cog mr-2 text-red-600"></i>
+                          Manage Members
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
@@ -196,6 +223,13 @@ const CommuneNavbar = ({ name = "" }) => {
                   >
                     <i className="fas fa-sliders-h mr-2 text-teal-600"></i>
                     Manage
+                  </button>
+                  <button
+                    onClick={() => handleDelete(communeid, commune.name)}
+                    className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
+                  >
+                    <i className="fas fa-trash mr-2 text-red-600"></i>
+                    Delete
                   </button>
                 </div>
               )}

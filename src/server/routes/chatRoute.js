@@ -80,7 +80,7 @@ router.get("/messages/:type/:id", validateToken, async (req, res) => {
     } else if (type === "individual") {
       // Fetch messages for an individual chat
       const [rows] = await pool.query(
-        `SELECT m.message_id, m.sender_id, m.message_text, m.created_at, u.username, u.profile_image
+        `SELECT m.message_id, m.sender_id as senderId, m.message_text, m.created_at, u.username, u.profile_image
            FROM individual_chat_messages m
            JOIN users u ON m.sender_id = u.user_id
            WHERE m.individual_chat_id = (

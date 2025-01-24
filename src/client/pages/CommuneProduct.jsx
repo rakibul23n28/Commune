@@ -72,7 +72,7 @@ const CommuneProduct = () => {
   return (
     <Layout>
       <CommuneFixedNav />
-      <CommuneNavbar name={commune?.name || "Commune"} />
+      <CommuneNavbar name={communeData?.name || "Commune"} />
       <div className="w-3/4 mx-auto p-6 bg-white rounded-lg shadow-md">
         <h1 className="text-2xl font-bold mb-4">Products</h1>
         {errorMessage && (

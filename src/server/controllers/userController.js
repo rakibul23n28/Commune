@@ -172,3 +172,56 @@ export const userCommunesInfo = async (req, res) => {
       .json({ message: "An error occurred while fetching communes." });
   }
 };
+
+export const userInterests = async (req, res) => {
+  try {
+    const userId = req.user.id; // Assuming `getAuthMiddleware` adds `user` to `req`
+    const [results] = await pool.query(
+      "SELECT interest_name FROM user_interests WHERE user_id = ?",
+      [userId]
+    );
+
+    if (!results.length) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const interests = results.map((res) => res.interest_name);
+
+    res.json({ interests });
+  } catch (error) {
+    console.error("Error fetching interests:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const createInterests = async (req, res) => {
+  try {
+    const userId = req.user.id; // Assuming `getAuthMiddleware` adds `user` to `req`
+    const { interests } = req.body;
+
+    await pool.query(
+      "INSERT INTO user_interests (user_id, interest_name) VALUES (?, ?) ON DUPLICATE KEY UPDATE interest_name = ?",
+      [userId, JSON.stringify(interests), JSON.stringify(interests)]
+    );
+
+    res.json({ message: "Interests updated successfully." });
+  } catch (error) {
+    console.error("Error updating interests:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const deleteInterests = async (req, res) => {
+  const userId = req.user.id;
+  const { interests } = req.body;
+
+  try {
+    await pool.query(
+      "DELETE FROM  user_interests WHERE interest_name = ? AND user_id = ? ",
+      [interests[0], userId]
+    );
+  } catch (err) {
+    console.error("Error deleting interests:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};

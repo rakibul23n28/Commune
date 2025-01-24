@@ -12,6 +12,8 @@ export const AuthProvider = ({ children }) => {
 
   // Function to handle login
   const login = async (email, password) => {
+    console.log("Logging in with email:", email);
+
     try {
       const { data } = await axios.post("/api/auth/login", { email, password });
 

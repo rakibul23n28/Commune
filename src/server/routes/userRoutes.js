@@ -5,6 +5,9 @@ import {
   updateUser,
   getUserByUsername,
   userCommunesInfo,
+  userInterests,
+  createInterests,
+  deleteInterests,
 } from "../controllers/userController.js";
 import { validateToken } from "../middleware/auth.js";
 import path from "path";
@@ -33,6 +36,11 @@ router.put(
   updateUser
 );
 
+// Fetch interests
+router.get("/interests", validateToken, userInterests);
+// Update interests
+router.post("/interests", validateToken, createInterests);
+router.post("/interests/delete", validateToken, deleteInterests);
 router.get("/communes/info/:userId", userCommunesInfo);
 router.get("/profile/:username", getUserByUsername);
 router.get("/:id", getUser);

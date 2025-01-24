@@ -14,26 +14,7 @@ export const validatePassword = (password) => {
   // Check password length (minimum 8 characters)
   const lengthCheck = password.length >= 8;
 
-  // Check for at least one lowercase letter
-  const lowercaseCheck = /[a-z]/.test(password);
-
-  // Check for at least one uppercase letter
-  const uppercaseCheck = /[A-Z]/.test(password);
-
-  // Check for at least one number
-  const numberCheck = /[0-9]/.test(password);
-
-  // Check for at least one special character
-  const specialCharCheck = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
   if (!lengthCheck) return "Password must be at least 8 characters long.";
-  if (!lowercaseCheck)
-    return "Password must contain at least one lowercase letter.";
-  if (!uppercaseCheck)
-    return "Password must contain at least one uppercase letter.";
-  if (!numberCheck) return "Password must contain at least one number.";
-  if (!specialCharCheck)
-    return "Password must contain at least one special character.";
 
   return null; // Password is strong
 };

@@ -294,6 +294,7 @@ export const getAllCommunes = async (req, res) => {
     res.status(500).json({ msg: "Server error during commune retrieval" });
   }
 };
+
 // // Get all communes with review count, average rating, and total joined users
 // export const getAllCommunes = async (req, res) => {
 //   try {
@@ -648,12 +649,42 @@ export const leaveCommune = async (req, res) => {
   }
 };
 
+export const deleteCommuneMember = async (req, res) => {
+  const membershipId = req.params.membershipId;
+
+  try {
+    const [result] = await pool.query(
+      "DELETE FROM commune_memberships WHERE membership_id = ?",
+      [membershipId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Membership not found" });
+    }
+
+    //delete chat_participants
+    const [chatResult] = await pool.query(
+      "DELETE FROM chat_participants WHERE membership_id = ?",
+      [membershipId]
+    );
+
+    if (chatResult.affectedRows === 0) {
+      return res.status(404).json({ message: "Chat participant not found" });
+    }
+
+    return res.status(200).json({ message: "Successfully deleted membership" });
+  } catch (err) {
+    console.error("Error deleting membership:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const getCommuneMembers = async (req, res) => {
   try {
     const { communeId } = req.params;
 
     const [members] = await pool.query(
-      `SELECT u.user_id, u.username, u.profile_image, cm.role, cm.joined_at
+      `SELECT u.user_id, u.username, u.profile_image, cm.role, cm.joined_at, cm.membership_id
          FROM commune_memberships cm
          JOIN users u ON cm.user_id = u.user_id
          WHERE cm.join_status = 'approved' AND cm.commune_id = ?`,
@@ -666,7 +697,24 @@ export const getCommuneMembers = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+export const getCommuneMembersManage = async (req, res) => {
+  try {
+    const { communeId } = req.params;
 
+    const [members] = await pool.query(
+      `SELECT u.user_id, u.username, u.profile_image, cm.role, cm.joined_at, cm.membership_id
+         FROM commune_memberships cm
+         JOIN users u ON cm.user_id = u.user_id
+         WHERE cm.join_status = 'approved' AND cm.commune_id = ? AND cm.role != 'admin'`,
+      [communeId]
+    );
+
+    res.status(200).json({ members });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
 export const getJoinRequestsMembers = async (req, res) => {
   try {
     const { communeId } = req.params;
@@ -690,6 +738,17 @@ export const updateCommuneMembership = async (req, res) => {
   try {
     const { membershipId } = req.params;
     const { status } = req.body;
+
+    if (status === "rejected") {
+      //delete the membership
+      await pool.query(
+        "DELETE FROM commune_memberships WHERE membership_id = ?",
+        [membershipId]
+      );
+      return res
+        .status(200)
+        .json({ message: "Membership deleted successfully" });
+    }
 
     // Update the membership status
     const [result] = await pool.query(
@@ -738,6 +797,28 @@ export const updateCommuneMembership = async (req, res) => {
     res.status(200).json({ message: "Membership updated successfully" });
   } catch (error) {
     console.error("Error updating membership:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const updateCommuneMembershipRole = async (req, res) => {
+  try {
+    const { membershipId } = req.params;
+    const { role } = req.body;
+
+    // Update the membership role
+    const [result] = await pool.query(
+      "UPDATE commune_memberships SET role = ? WHERE membership_id = ?",
+      [role, membershipId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Membership not found" });
+    }
+
+    res.status(200).json({ message: "Membership role updated successfully" });
+  } catch (error) {
+    console.error("Error updating membership role:", error);
     res.status(500).json({ error: "Server error" });
   }
 };

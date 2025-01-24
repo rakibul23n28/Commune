@@ -85,7 +85,7 @@ const CreateEventPage = () => {
           }
         );
 
-        location.href = `/commune/${commune?.commune_id}`;
+        location.href = `/commune/${commune?.commune_id}/events`;
       } else {
         setErrorMessage(
           "You must be a member of this commune to create an event."

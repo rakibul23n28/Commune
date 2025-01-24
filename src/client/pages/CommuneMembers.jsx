@@ -6,6 +6,7 @@ import CommuneNavbar from "../components/CommuneNavbar";
 import CommuneFixedNav from "../components/CommuneFixedNav";
 import { timeAgo } from "../utils/Helper";
 import { useCommuneMembership } from "../context/CommuneMembershipContext";
+import { getAuthHeaders } from "../utils/Helper";
 
 const CommuneMembers = () => {
   const { communeid } = useParams();
@@ -39,7 +40,10 @@ const CommuneMembers = () => {
   const fetchMembers = async () => {
     try {
       const response = await axios.get(
-        `/api/commune/commune-members/${communeid}`
+        `/api/commune/commune-members/${communeid}`,
+        {
+          headers: getAuthHeaders(),
+        }
       );
       setMembers(response.data.members);
     } catch (error) {

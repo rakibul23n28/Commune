@@ -2,10 +2,14 @@ import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import FacebookLogin from "react-facebook-login";
 import { validatePassword, validateUsername } from "../utils/Helper.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const Register = () => {
   const [firstName, setFirstName] = useState("");
+  const { login } = useAuth();
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -97,6 +101,109 @@ const Register = () => {
     }
   }, [passwordError]);
 
+  const handleGoogleLogin = async (credentialResponse) => {
+    const decodedToken = JSON.parse(
+      atob(credentialResponse.credential.split(".")[1])
+    );
+
+    const {
+      given_name: firstName,
+      family_name: lastName,
+      email,
+      picture,
+      sub: socialId, // Google social ID
+    } = decodedToken;
+    const username = email.split("@")[0];
+
+    // Prompt user for a password
+    const password = prompt("Please enter a password for your account:");
+
+    const validationError = validatePassword(password);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+
+    try {
+      const response = await axios.post("/api/auth/social-register", {
+        first_name: firstName,
+        last_name: lastName,
+        username,
+        email,
+        picture,
+        social_id: socialId, // Sending social ID
+        password, // Sending password
+      });
+
+      if (response.data.success) {
+        const { success, message } = await login(email, password);
+        if (success) {
+          navigate("/");
+        } else {
+          setMessage(message);
+        }
+        // Handle successful login or registration (e.g., redirect, store token, etc.)
+      } else {
+        console.error(
+          "Error logging in or registering:",
+          response.data.message
+        );
+      }
+    } catch (error) {
+      alert(error.response?.data?.message);
+    }
+  };
+
+  const handleFacebookLogin = async (response) => {
+    if (response.accessToken) {
+      const { name, email, id: socialId, picture } = response;
+      const [firstName, ...lastNameArray] = name.split(" ");
+      const lastName = lastNameArray.join(" ");
+      const username = email.split("@")[0];
+
+      // Prompt user for a password
+      const password = prompt("Please enter a password for your account:");
+
+      const validationError = validatePassword(password);
+      if (validationError) {
+        console.log("Validation Error:", validationError);
+
+        alert(validationError);
+        return;
+      }
+
+      try {
+        const apiResponse = await axios.post("/api/auth/social-register", {
+          first_name: firstName,
+          last_name: lastName,
+          username,
+          email,
+          picture: picture.data.url,
+          social_id: socialId, // Sending social ID
+          password, // Sending password
+        });
+
+        if (apiResponse.data.success) {
+          const { success, message } = await login(email, password);
+          if (success) {
+            navigate("/");
+          } else {
+            setMessage(message);
+          }
+        } else {
+          console.error(
+            "Error logging in or registering:",
+            apiResponse.data.message
+          );
+        }
+      } catch (error) {
+        alert(error.response?.data?.message);
+      }
+    } else {
+      console.log("Facebook Login Failed");
+    }
+  };
+
   const renderInputField = (id, label, value, setValue, type = "text") => (
     <div className="relative mb-4">
       <input
@@ -184,12 +291,25 @@ const Register = () => {
             "Your journey starts here."
           </p>
           <div className="flex flex-col space-y-4">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">
-              Login with Facebook
-            </button>
-            <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded w-full">
-              Login with Google
-            </button>
+            {/* Facebook Login */}
+            <FacebookLogin
+              appId="2035754323574938"
+              fields="name,email,picture,first_name,last_name"
+              callback={handleFacebookLogin}
+              icon="fa-facebook"
+              textButton="Login with Facebook"
+              cssClass="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+            />
+
+            {/* Google Login */}
+            <GoogleOAuthProvider clientId="31347194601-9iu4aee0gc6k0oab2qp6k69m6omr16gr.apps.googleusercontent.com">
+              <GoogleLogin
+                onSuccess={handleGoogleLogin}
+                onError={() => {
+                  console.log("Google Login Failed");
+                }}
+              />
+            </GoogleOAuthProvider>
           </div>
         </div>
       </div>

@@ -77,6 +77,7 @@ const CreateProduct = () => {
       setPrice("");
       setProductImage(null);
       setImagePreview(null); // Clear the image preview
+      location.href = `/commune/${communeid}/products`;
     } catch (error) {
       setErrorMessage(
         error.response?.data?.message || "Failed to create product."

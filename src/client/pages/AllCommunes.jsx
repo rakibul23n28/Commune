@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import Layout from "../components/Layout";
 import { getAuthHeaders } from "../utils/Helper.js";
-import { debounce } from "lodash";
+
 import { timeAgo } from "../utils/Helper.js";
 
 const AllCommunes = () => {
@@ -24,7 +24,7 @@ const AllCommunes = () => {
         });
         setCommunes(response.data.communes);
       } catch (err) {
-        setError("Failed to load communes.");
+        // setError("Failed to load communes.");
         console.error("Error fetching communes:", err);
       } finally {
         setLoading(false);
@@ -90,7 +90,7 @@ const AllCommunes = () => {
     return (
       <Layout>
         <div className="flex justify-center items-center">
-          <p className="text-lg text-red-600">{error}</p>
+          <p className="text-lg text-red-600">{error}</p>sfsdfdsfdsf
         </div>
       </Layout>
     );

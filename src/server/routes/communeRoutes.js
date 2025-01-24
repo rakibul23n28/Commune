@@ -15,11 +15,14 @@ import {
   //commune
   joinCommune,
   leaveCommune,
+  deleteCommuneMember,
   //members
   getCommuneMembers,
+  getCommuneMembersManage,
   getJoinRequestsMembers,
   updateCommuneMembership,
   addChatParticipants,
+  updateCommuneMembershipRole,
   //reviews
   getCommuneReviews,
   setCommuneReview,
@@ -139,12 +142,22 @@ router.put("/list/:listid", validateToken, updateCommuneListing);
 router.delete("/list/:listid", validateToken, deleteCommuneListing);
 //members
 
-router.get("/commune-members/:communeId", getCommuneMembers);
+router.get("/commune-members/:communeId", validateToken, getCommuneMembers);
+router.get(
+  "/commune-members-manage/:communeId",
+  validateToken,
+  getCommuneMembersManage
+);
 router.get("/join-requests/:communeId", getJoinRequestsMembers);
 router.patch(
   "/join-status/:membershipId",
   validateToken,
   updateCommuneMembership
+);
+router.patch(
+  "/member-role/:membershipId",
+  validateToken,
+  updateCommuneMembershipRole
 );
 // Example route to add participants
 router.post(
@@ -214,8 +227,9 @@ router.post(
 );
 
 router.post("/membership/:communeId/join", validateToken, joinCommune);
-router.delete("/membership/:communeId/delete", validateToken, leaveCommune);
 router.delete("/delete/:communeid", validateToken, deleteCommune);
+router.delete("/member/:membershipId", validateToken, deleteCommuneMember);
+router.delete("/membership/:communeId/delete", validateToken, leaveCommune);
 
 // Route: GET /api/commune/:communeId/:userId
 router.get(
