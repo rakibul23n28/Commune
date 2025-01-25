@@ -9,6 +9,7 @@ import {
   getUserCommunesByCommuneId,
   updateCommune,
   getAllCommunes,
+  getUserInterestedCommunes,
   deleteCommune,
   getCommuneUserStatus,
   getJoinedCommunes,
@@ -45,6 +46,7 @@ import {
   getCommuneEvent,
   deleteCommuneEvent,
   updateCommuneEvent,
+  getCommuneEventWithDetails,
 
   //products
   createProduct,
@@ -122,6 +124,7 @@ export const uploadEvent = multer({
 
 // Example route for fetching user's communes
 router.get("/all", getAllCommunes);
+router.get("/user-interested", getUserInterestedCommunes);
 router.get("/:username", getUserCommunes);
 
 // router.get("/communes/c/:communeid", getCommunesByCommuneId);
@@ -237,6 +240,9 @@ router.get(
   validateToken,
   getCommuneUserStatus
 );
+
+//event
+router.get("/:communeid/event/:eventid", getCommuneEventWithDetails);
 
 router.put(
   "/:communeid",

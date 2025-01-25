@@ -253,11 +253,11 @@ export const updateCommune = async (req, res) => {
 export const getAllCommunes = async (req, res) => {
   try {
     // Query to get communes along with review count, average rating, and total joined users
-    const query = `
+    const communeQuery = `
       SELECT c.*, 
-            COUNT(cr.review_id) OVER (PARTITION BY c.commune_id) AS review_count,
-            AVG(cr.rating) OVER (PARTITION BY c.commune_id) AS avg_rating,
-            cm.total_joined_users
+             COUNT(cr.review_id) OVER (PARTITION BY c.commune_id) AS review_count,
+             AVG(cr.rating) OVER (PARTITION BY c.commune_id) AS avg_rating,
+             cm.total_joined_users
       FROM communes c
       LEFT JOIN commune_reviews cr ON c.commune_id = cr.commune_id
       LEFT JOIN (
@@ -268,12 +268,24 @@ export const getAllCommunes = async (req, res) => {
       ) cm ON c.commune_id = cm.commune_id;
     `;
 
-    const [communesWithDetails] = await pool.query(query);
+    const [communesWithDetails] = await pool.query(communeQuery);
 
     // If no communes found
     if (communesWithDetails.length === 0) {
       return res.status(404).json({ msg: "No communes found" });
     }
+
+    // Fetch two events for each public commune
+    const eventsQuery = `
+      SELECT e.*, c.name 
+      FROM events e
+      INNER JOIN communes c ON e.commune_id = c.commune_id
+      WHERE c.privacy = 'public'
+      ORDER BY e.event_date ASC
+      LIMIT 2;
+    `;
+
+    const [events] = await pool.query(eventsQuery);
 
     // Group communes with their review count, average rating, and total joined users
     const communes = [];
@@ -284,11 +296,120 @@ export const getAllCommunes = async (req, res) => {
         commune.review_count = row.review_count; // Set the review count for the commune
         commune.avg_rating = row.avg_rating; // Set the average rating for the commune
         commune.total_joined_users = row.total_joined_users; // Set the total joined users for the commune
+
+        // Attach events to public communes
+        if (row.privacy === "public") {
+          commune.events = events
+            .filter((event) => event.commune_id === row.commune_id)
+            .slice(0, 2); // Only include up to 2 events
+        } else {
+          commune.events = []; // No events for non-public communes
+        }
+
         communes.push(commune);
       }
     });
 
     res.status(200).json({ communes });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Server error during commune retrieval" });
+  }
+};
+
+export const getUserInterestedCommunes = async (req, res) => {
+  const { userId } = req.query;
+
+  try {
+    // Step 1: Fetch user interests
+    const interestsQuery = `
+      SELECT interest_name
+      FROM user_interests
+      WHERE user_id = ?;
+    `;
+    const [userInterests] = await pool.query(interestsQuery, [userId]);
+
+    const interestNames = userInterests.map(
+      (interest) => interest.interest_name
+    );
+
+    // console.log(interestNames);
+
+    // Step 2: Query all communes
+    const communeQuery = `
+      SELECT c.*, 
+             COUNT(cr.review_id) OVER (PARTITION BY c.commune_id) AS review_count,
+             AVG(cr.rating) OVER (PARTITION BY c.commune_id) AS avg_rating,
+             cm.total_joined_users
+      FROM communes c
+      LEFT JOIN commune_reviews cr ON c.commune_id = cr.commune_id
+      LEFT JOIN (
+          SELECT commune_id, COUNT(membership_id) AS total_joined_users
+          FROM commune_memberships
+          WHERE join_status = 'approved'
+          GROUP BY commune_id
+      ) cm ON c.commune_id = cm.commune_id;
+    `;
+    const [allCommunes] = await pool.query(communeQuery);
+
+    if (!allCommunes.length) {
+      return res.status(404).json({ msg: "No communes found" });
+    }
+
+    // Step 3: Match communes with user interests
+    const interestMatchedCommunes = [];
+    const otherCommunes = [];
+
+    allCommunes.forEach((commune) => {
+      const isMatched = interestNames.some((interest) => {
+        return (
+          commune.name?.toLowerCase().includes(interest.toLowerCase()) ||
+          commune.description?.toLowerCase().includes(interest.toLowerCase()) ||
+          commune.content?.toLowerCase().includes(interest.toLowerCase()) ||
+          commune.location?.toLowerCase().includes(interest.toLowerCase())
+        );
+      });
+
+      if (isMatched) {
+        interestMatchedCommunes.push(commune);
+      } else {
+        otherCommunes.push(commune);
+      }
+    });
+
+    // Step 4: Fetch two events for public communes
+    const eventsQuery = `
+      SELECT e.*, c.name 
+      FROM events e
+      INNER JOIN communes c ON e.commune_id = c.commune_id
+      WHERE c.privacy = 'public'
+      ORDER BY e.event_date ASC;
+    `;
+    const [events] = await pool.query(eventsQuery);
+
+    // Step 5: Attach events to public communes
+    const attachEvents = (communes) =>
+      communes.map((commune) => {
+        if (commune.privacy === "public") {
+          commune.events = events
+            .filter((event) => event.commune_id === commune.commune_id)
+            .slice(0, 2); // Limit to 2 events
+        } else {
+          commune.events = [];
+        }
+        return commune;
+      });
+
+    const sortedCommunes = [
+      ...attachEvents(interestMatchedCommunes),
+      ...attachEvents(otherCommunes),
+    ];
+
+    // Step 6: Respond with sorted data
+    res.status(200).json({
+      communes: sortedCommunes,
+      userInterests: interestNames,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "Server error during commune retrieval" });
@@ -1107,7 +1228,7 @@ export const getCommunePost = async (req, res) => {
   const { postid } = req.params;
 
   try {
-    // SQL query to fetch the post details
+    // SQL query to fetch the post details along with likes, hates, and comment count
     const query = `
       SELECT 
         p.post_id, 
@@ -1117,21 +1238,23 @@ export const getCommunePost = async (req, res) => {
         p.tags,
         p.created_at, 
         u.username, 
-        u.profile_image 
+        u.profile_image,
+        COALESCE(SUM(CASE WHEN r.reaction_type = 'like' THEN 1 ELSE 0 END), 0) AS likes,
+        COALESCE(SUM(CASE WHEN r.reaction_type = 'hate' THEN 1 ELSE 0 END), 0) AS hates,
+        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comments
       FROM posts p
       JOIN users u ON p.user_id = u.user_id
+      LEFT JOIN reactions r ON p.post_id = r.post_id
       WHERE p.post_id = ?
+      GROUP BY p.post_id
     `;
 
-    // Execute the query with the provided post ID
     const [result] = await pool.query(query, [postid]);
 
-    // Check if the post exists
     if (result.length === 0) {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    // Return the post data
     res.json({ post: result[0] });
   } catch (error) {
     console.error("Error fetching post:", error.message);
@@ -1291,36 +1414,61 @@ export const getCommuneListing = async (req, res) => {
   const postid = listid;
 
   try {
-    const [post] = await pool.query("SELECT * FROM posts WHERE post_id = ?", [
-      postid,
-    ]);
+    // Fetch the post details along with user information
+    const [post] = await pool.query(
+      `SELECT 
+        posts.*, 
+        users.username, 
+        users.profile_image, 
+        posts.created_at 
+      FROM posts 
+      INNER JOIN users ON posts.user_id = users.user_id 
+      WHERE posts.post_id = ?`,
+      [postid]
+    );
 
+    if (!post.length) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    // Fetch attributes for the post
     const [attributes] = await pool.query(
       "SELECT attributes FROM post_attributes WHERE post_id = ?",
       [postid]
     );
 
-    // Safeguard against parsing issues
+    // Parse attributes safely
     const parsedAttributes = attributes.map((attr) => {
       if (typeof attr.attributes === "string") {
         return JSON.parse(attr.attributes);
       }
-      return attr.attributes; // Already an object
+      return attr.attributes;
     });
 
-    // Columns are the names of the attributes
+    // Construct columns and rows
     const columns = parsedAttributes.map((attr) => ({
-      attribute_name: attr.attribute_name || "Unnamed Attribute", // Default if `attribute_name` is missing
-      attribute_type: attr.attribute_type || "Unknown Type", // Default if `attribute_type` is missing
+      attribute_name: attr.attribute_name || "Unnamed Attribute",
+      attribute_type: attr.attribute_type || "Unknown Type",
     }));
 
-    // Rows: Each row is an object with attribute names as keys and values for each person
     const rows = parsedAttributes.map((attr) => ({
       [attr.attribute_name]: Array.isArray(attr.attribute_value)
-        ? attr.attribute_value.join(", ") // Join array values with a comma
-        : attr.attribute_value || "No Value", // If not an array, use the value or fallback
+        ? attr.attribute_value.join(", ")
+        : attr.attribute_value || "No Value",
     }));
 
+    // Fetch likes, hates, and comments count for the post
+    const [[reactions]] = await pool.query(
+      `SELECT 
+        COALESCE(SUM(CASE WHEN reaction_type = 'like' THEN 1 ELSE 0 END), 0) AS likes,
+        COALESCE(SUM(CASE WHEN reaction_type = 'hate' THEN 1 ELSE 0 END), 0) AS hates,
+        (SELECT COUNT(*) FROM comments WHERE post_id = ?) AS comments
+      FROM reactions
+      WHERE post_id = ?`,
+      [postid, postid]
+    );
+
+    // Respond with the complete data
     res.status(200).json({
       metaData: {
         title: post[0].title,
@@ -1328,6 +1476,12 @@ export const getCommuneListing = async (req, res) => {
         links: post[0].links,
         tags: post[0].tags,
         post_id: post[0].post_id,
+        username: post[0].username,
+        profile_image: post[0].profile_image,
+        created_at: post[0].created_at,
+        likes: reactions.likes,
+        hates: reactions.hates,
+        comments: reactions.comments,
       },
       columns,
       rows,
@@ -1498,6 +1652,36 @@ export const getCommuneEvent = async (req, res) => {
     res.status(500).json({ error: "Error fetching event" });
   }
 };
+
+export const getCommuneEventWithDetails = async (req, res) => {
+  const { communeid, eventid } = req.params;
+
+  try {
+    // Query the event details along with the commune and user info
+    const query = `
+      SELECT 
+        e.event_id, e.commune_id, e.created_by, e.event_name, e.event_image, 
+        e.event_description, e.event_date, e.created_at, e.updated_at, 
+        u.username AS created_by_username, c.name 
+      FROM events e
+      JOIN users u ON e.created_by = u.user_id
+      JOIN communes c ON e.commune_id = c.commune_id
+      WHERE e.commune_id = ? AND e.event_id = ?;
+    `;
+
+    const [event] = await pool.execute(query, [communeid, eventid]);
+
+    if (event.length === 0) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    res.json({ event: event[0] });
+  } catch (error) {
+    console.error("Error fetching event details:", error);
+    res.status(500).json({ message: "Server error. Please try again later." });
+  }
+};
+
 export const deleteCommuneEvent = async (req, res) => {
   const eventId = req.params.eventid;
 

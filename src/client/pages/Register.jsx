@@ -9,11 +9,12 @@ import { useAuth } from "../context/AuthContext.jsx";
 
 const Register = () => {
   const [firstName, setFirstName] = useState("");
-  const { login } = useAuth();
+  const { setUser } = useAuth();
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [usernameError, setUsernameError] = useState(null);
   const [passwordError, setPasswordError] = useState(null);
@@ -115,15 +116,6 @@ const Register = () => {
     } = decodedToken;
     const username = email.split("@")[0];
 
-    // Prompt user for a password
-    const password = prompt("Please enter a password for your account:");
-
-    const validationError = validatePassword(password);
-    if (validationError) {
-      alert(validationError);
-      return;
-    }
-
     try {
       const response = await axios.post("/api/auth/social-register", {
         first_name: firstName,
@@ -132,17 +124,16 @@ const Register = () => {
         email,
         picture,
         social_id: socialId, // Sending social ID
-        password, // Sending password
       });
 
       if (response.data.success) {
-        const { success, message } = await login(email, password);
-        if (success) {
-          navigate("/");
-        } else {
-          setMessage(message);
-        }
-        // Handle successful login or registration (e.g., redirect, store token, etc.)
+        const updatedUserWithToken = {
+          ...response.data.user,
+          token: response.data.token,
+        };
+        setUser(updatedUserWithToken);
+        localStorage.setItem("user", JSON.stringify(updatedUserWithToken));
+        navigate("/");
       } else {
         console.error(
           "Error logging in or registering:",
@@ -161,17 +152,6 @@ const Register = () => {
       const lastName = lastNameArray.join(" ");
       const username = email.split("@")[0];
 
-      // Prompt user for a password
-      const password = prompt("Please enter a password for your account:");
-
-      const validationError = validatePassword(password);
-      if (validationError) {
-        console.log("Validation Error:", validationError);
-
-        alert(validationError);
-        return;
-      }
-
       try {
         const apiResponse = await axios.post("/api/auth/social-register", {
           first_name: firstName,
@@ -180,16 +160,12 @@ const Register = () => {
           email,
           picture: picture.data.url,
           social_id: socialId, // Sending social ID
-          password, // Sending password
         });
 
         if (apiResponse.data.success) {
-          const { success, message } = await login(email, password);
-          if (success) {
-            navigate("/");
-          } else {
-            setMessage(message);
-          }
+          setUser(updatedUserWithToken);
+          localStorage.setItem("user", JSON.stringify(updatedUserWithToken));
+          navigate("/");
         } else {
           console.error(
             "Error logging in or registering:",
@@ -252,13 +228,32 @@ const Register = () => {
                 <p className="text-red-500 mt-2">{usernameError}</p>
               )}
               {renderInputField("email", "Email", email, setEmail, "email")}
-              {renderInputField(
-                "password",
-                "Password",
-                password,
-                setPassword,
-                "password"
-              )}
+              <div className="relative mb-4">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  className="peer appearance-none border-b-2 border-red-200 w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:border-green-500 placeholder-transparent"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <label
+                  htmlFor="password"
+                  className="absolute left-0 -top-3 text-gray-500 text-sm transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base peer-focus:-top-3 peer-focus:text-gray-500 peer-focus:text-sm"
+                >
+                  Password
+                </label>
+                <div
+                  className="absolute right-0 top-2 cursor-pointer"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  {showPassword ? (
+                    <i className="fas fa-eye-slash"></i>
+                  ) : (
+                    <i className="fas fa-eye"></i>
+                  )}
+                </div>
+              </div>
               {passwordError && (
                 <p className="text-red-500 mt-2">{passwordError}</p>
               )}

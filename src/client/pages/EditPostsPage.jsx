@@ -17,18 +17,15 @@ const EditPostsPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [links, setLinks] = useState("");
   const [tags, setTags] = useState("");
 
   useEffect(() => {
     const loadPostData = async () => {
       try {
         const response = await axios.get(`/api/commune/post/${postid}`);
-
-        const { title, content, links, tags } = response.data.post;
+        const { title, content, tags } = response.data.post;
         setTitle(title);
         setContent(content);
-        setLinks(links);
         setTags(tags);
       } catch (error) {
         setErrorMessage("Failed to load post data.");
@@ -57,8 +54,7 @@ const EditPostsPage = () => {
           {
             title,
             content,
-            links: links,
-            tags: tags,
+            tags,
           },
           {
             headers: {
@@ -126,41 +122,6 @@ const EditPostsPage = () => {
             <div className="h-96 bg-gray-50 rounded-lg overflow-hidden shadow-inner">
               <QuillEditor value={content} onChange={setContent} />
             </div>
-          </div>
-
-          <div className="mb-4">
-            <label
-              htmlFor="links"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Links (separated by space)
-            </label>
-            <input
-              id="links"
-              type="text"
-              value={links}
-              onChange={(e) => setLinks(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Edit relevant links"
-            />
-            {links && (
-              <div className="mt-2">
-                <h3 className="text-sm font-medium text-gray-700">Links:</h3>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {links.split(" ").map((link, index) => (
-                    <a
-                      key={index}
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block bg-green-100 text-green-800 text-xs font-semibold py-1 px-2 rounded-full hover:bg-green-200"
-                    >
-                      {link}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="mb-4">

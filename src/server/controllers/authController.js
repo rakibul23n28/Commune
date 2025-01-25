@@ -114,7 +114,26 @@ export const verifyAccount = async (req, res) => {
       decodedToken.id,
     ]);
 
-    res.status(200).json({ msg: "Account verified successfully" });
+    const [users] = await pool.query("SELECT * FROM Users WHERE user_id = ?", [
+      decodedToken.id,
+    ]);
+    const tokenn = generateToken(users[0]);
+
+    res.json({
+      success: true,
+      msg: "Account verified successfully",
+      token: tokenn,
+      user: {
+        id: users[0].user_id,
+        username: users[0].username,
+        email: users[0].email,
+        first_name: users[0].first_name,
+        last_name: users[0].last_name,
+        is_verified: users[0].is_verified,
+        profile_image: users[0].profile_image,
+        joinedDate: users[0].createdAt,
+      },
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "Server error during verification" });
@@ -196,34 +215,45 @@ export const validate = async (req, res) => {
   }
   res.json({ isValid: true });
 };
+
 export const socialRegister = async (req, res) => {
-  const {
-    first_name,
-    last_name,
-    username,
-    email,
-    picture,
-    social_id,
-    password,
-  } = req.body;
+  const { first_name, last_name, username, email, picture, social_id } =
+    req.body;
 
   try {
-    // Check if the email already exists
+    // Check if the user already exists by email
     const [existingUser] = await pool.query(
       "SELECT * FROM users WHERE email = ?",
       [email]
     );
 
+    // If the user exists, generate a token and log them in
     if (existingUser.length > 0) {
-      return res
-        .status(201)
-        .json({ success: true, message: "User registered successfully" });
+      const token = generateToken(existingUser[0]); // Assuming generateToken creates a JWT
+      return res.status(200).json({
+        success: true,
+        message: "Login successful.",
+        user: {
+          id: existingUser[0].user_id,
+          username: existingUser[0].username,
+          email: existingUser[0].email,
+          first_name: existingUser[0].first_name,
+          last_name: existingUser[0].last_name,
+          is_verified: existingUser[0].is_verified,
+          profile_image: existingUser[0].profile_image,
+          joinedDate: existingUser[0].createdAt,
+        },
+        token,
+      });
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generate a placeholder password for social login users
+    const placeholderPassword = await bcrypt.hash(
+      `social_login_${social_id}_${Date.now()}`,
+      10
+    );
 
-    // Insert user into the database
+    // Insert a new user into the database
     const [result] = await pool.query(
       `INSERT INTO users (social_id, first_name, last_name, username, profile_image, email, password, is_verified) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -234,18 +264,35 @@ export const socialRegister = async (req, res) => {
         username,
         picture || null,
         email,
-        hashedPassword,
-        true,
+        placeholderPassword, // Placeholder password
+        true, // Mark as verified since it's a social login
       ]
     );
 
-    if (result.affectedRows > 0) {
-      return res
-        .status(201)
-        .json({ success: true, message: "User registered successfully" });
-    } else {
-      throw new Error("Failed to register user");
-    }
+    // Fetch the newly created user
+    const [newUser] = await pool.query(
+      "SELECT * FROM users WHERE user_id = ?",
+      [result.insertId]
+    );
+
+    // Generate a token for the new user
+    const token = generateToken(newUser[0]);
+
+    return res.status(201).json({
+      success: true,
+      message: "User registered and logged in successfully.",
+      user: {
+        id: newUser[0].user_id,
+        username: newUser[0].username,
+        email: newUser[0].email,
+        first_name: newUser[0].first_name,
+        last_name: newUser[0].last_name,
+        is_verified: newUser[0].is_verified,
+        profile_image: newUser[0].profile_image,
+        joinedDate: newUser[0].createdAt,
+      },
+      token,
+    });
   } catch (error) {
     console.error("Error during social registration:", error.message);
     res.status(500).json({ success: false, message: "Internal server error" });

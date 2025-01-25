@@ -199,15 +199,26 @@ export const createInterests = async (req, res) => {
     const userId = req.user.id; // Assuming `getAuthMiddleware` adds `user` to `req`
     const { interests } = req.body;
 
-    await pool.query(
+    // Inserting or updating the interest
+    const result = await pool.query(
       "INSERT INTO user_interests (user_id, interest_name) VALUES (?, ?) ON DUPLICATE KEY UPDATE interest_name = ?",
-      [userId, JSON.stringify(interests), JSON.stringify(interests)]
+      [userId, interests, interests]
     );
 
+    // If the query was successful, send a success message
     res.json({ message: "Interests updated successfully." });
   } catch (error) {
-    console.error("Error updating interests:", error);
-    res.status(500).json({ message: "Internal server error." });
+    // Handle duplicate key violation error
+    if (error.code === "ER_DUP_ENTRY") {
+      console.log("Interest already exists for this user.");
+
+      res
+        .status(400)
+        .json({ message: "Interest already exists for this user." });
+    } else {
+      console.error("Error updating interests:", error);
+      res.status(500).json({ message: "Internal server error." });
+    }
   }
 };
 

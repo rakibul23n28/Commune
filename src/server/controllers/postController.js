@@ -24,14 +24,22 @@ export const makeReaction = async (req, res) => {
         [reaction_type, postid, userId]
       );
       //count reaction
-      const [count] = await pool.query(
-        "SELECT COUNT(*) AS reaction_count FROM reactions WHERE post_id = ? AND reaction_type = ?",
-        [postid, reaction_type]
+      const [countLike] = await pool.query(
+        "SELECT COUNT(*) AS reaction_count FROM reactions WHERE post_id = ? AND reaction_type = 'like'",
+        [postid]
       );
+      const [countHate] = await pool.query(
+        "SELECT COUNT(*) AS reaction_count FROM reactions WHERE post_id = ? AND reaction_type = 'hate'",
+        [postid]
+      );
+
       return res.json({
         message: "Reaction updated successfully.",
         update: true,
-        reaction_count: count[0].reaction_count,
+        reaction_count: {
+          like: countLike[0].reaction_count,
+          hate: countHate[0].reaction_count,
+        },
       });
     }
 

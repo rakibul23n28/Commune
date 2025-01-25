@@ -245,10 +245,37 @@ const CommuneProduct = () => {
                 key={product.product_id}
                 className="bg-gray-100 p-4 rounded-lg shadow-md"
               >
+                <div className="flex items-center mb-4">
+                  <img
+                    src={product.profile_image}
+                    alt={product.username}
+                    className="object-cover rounded-full w-12 h-12"
+                  />
+                  <div className="ml-4">
+                    <Link to={`/profile/${product.username}`}>
+                      <h3 className="text-lg font-semibold text-blue-500">
+                        {product.username}
+                      </h3>
+                    </Link>
+                    <p className="text-gray-600 text-sm">
+                      {timeAgo(product.created_at)}
+                    </p>
+                  </div>
+                </div>
+
+                {product.product_image && (
+                  <img
+                    src={product.product_image}
+                    alt={product.product_name}
+                    className="w-full h-48 object-cover rounded-md mb-4"
+                  />
+                )}
                 <h2 className="text-lg font-semibold">
                   {product.product_name}
                 </h2>
-                <p className="text-gray-600">{product.description}</p>
+                <p className="text-gray-600 break-words">
+                  {product.description}
+                </p>
                 <div className="border-t border-gray-300 mt-4 flex justify-between items-center">
                   <p className="text-green-600 font-bold mt-2">
                     ${Number(product.price).toFixed(2)}

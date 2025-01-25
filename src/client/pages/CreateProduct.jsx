@@ -6,7 +6,6 @@ import CommuneNavbar from "../components/CommuneNavbar";
 import CommuneFixedNav from "../components/CommuneFixedNav";
 import { useCommuneMembership } from "../context/CommuneMembershipContext";
 import { useAuth } from "../context/AuthContext";
-import { getAuthHeaders } from "../utils/Helper";
 
 const CreateProduct = () => {
   const { communeid } = useParams();
@@ -20,7 +19,7 @@ const CreateProduct = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const { getRole, fetchCommuneData, communeData } = useCommuneMembership();
-  const { loading, setLoading } = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const loadCommuneData = async () => {
@@ -45,6 +44,15 @@ const CreateProduct = () => {
       setCommune(communeData);
     }
   }, [communeData]);
+
+  const handleDescriptionChange = (e) => {
+    const value = e.target.value;
+    if (value.length <= 180) {
+      setDescription(value);
+    } else {
+      setErrorMessage("Description cannot exceed 180 characters.");
+    }
+  };
 
   const handleProductSubmit = async (e) => {
     e.preventDefault();
@@ -141,17 +149,23 @@ const CreateProduct = () => {
             <textarea
               id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={handleDescriptionChange}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Enter product description"
+              placeholder="Enter product description (max 180 characters)"
             ></textarea>
+            <div className="flex justify-between text-sm text-gray-500 mt-1">
+              <span>{description.length}/ 180</span>
+              {description.length === 180 && (
+                <span className="text-red-500">Character limit reached</span>
+              )}
+            </div>
           </div>
           <div className="mb-4">
             <label
               htmlFor="price"
               className="block text-sm font-medium text-gray-700"
             >
-              Price ($)
+              Price
             </label>
             <input
               id="price"

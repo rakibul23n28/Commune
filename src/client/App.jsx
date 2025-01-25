@@ -31,6 +31,7 @@ import EditListingForm from "./pages/EditListingForm";
 import CreateEvent from "./pages/CreateEvent";
 import CommuneEventsPage from "./pages/CommuneEventsPage";
 import EditEventPage from "./pages/EditEventPage";
+import ViewEventPage from "./pages/ViewEventPage";
 
 //products
 import CreateProduct from "./pages/CreateProduct";
@@ -212,6 +213,10 @@ const App = () => (
                 <Route
                   path="/:communeid/list/:listid"
                   element={<ViewListPage />}
+                />
+                <Route
+                  path="/:communeid/event/:eventid"
+                  element={<ViewEventPage />}
                 />
               </Routes>
             </CommuneMembershipProvider>

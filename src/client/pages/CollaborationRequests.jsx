@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Layout from "../components/Layout";
 import CommuneNavbar from "../components/CommuneNavbar";
@@ -107,12 +107,34 @@ const CollaborationRequests = () => {
                 className="border p-4 mb-4 rounded-lg flex justify-between items-center"
               >
                 <div>
-                  <h3 className="font-semibold">{post.title}</h3>
-                  <p>{post.description}</p>
+                  <h3 className="font-semibold">
+                    <Link
+                      to={`/commune/${communeid}/${
+                        post.post_type === "blog" ? "post" : "list"
+                      }/${post.post_id}`}
+                    >
+                      {post.title}
+                    </Link>
+                  </h3>
+                  {post.post_type === "blog" ? (
+                    <div
+                      className="text-gray-700 overflow-hidden max-h-96 overflow-ellipsis"
+                      dangerouslySetInnerHTML={{ __html: post.description }}
+                    ></div>
+                  ) : (
+                    <p className="text-gray-700 text-wrap">
+                      {post.description}
+                    </p>
+                  )}
                   <div className="text-sm text-gray-600">
                     <strong>Status:</strong> {post.collaboration_status}
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-600 flex items-center">
+                    <img
+                      src={post.collaborating_commune_image}
+                      alt={post.collaborating_commune_name}
+                      className="w-10 h-10 mr-2 rounded-full"
+                    />
                     <strong>Collaborating Commune:</strong>{" "}
                     {post.collaborating_commune_name}
                   </div>
@@ -141,7 +163,7 @@ const CollaborationRequests = () => {
               >
                 <div>
                   <h3 className="font-semibold">{event.event_name}</h3>
-                  <p>{event.description}</p>
+                  <p className="mt-2 break-words">{event.description}</p>
                   <div className="text-sm text-gray-600">
                     <strong>Status:</strong> {event.collaboration_status}
                   </div>

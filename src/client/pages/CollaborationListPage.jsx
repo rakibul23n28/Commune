@@ -157,18 +157,9 @@ const CollaborationListPage = () => {
                 metaData: {
                   ...list.metaData,
                   userReaction: type, // Update user reaction
-                  likes:
-                    type === "like"
-                      ? updatedReactionCount
-                      : list.metaData.likes === 0
-                      ? 0
-                      : list.metaData.likes - 1,
-                  hates:
-                    type === "hate"
-                      ? updatedReactionCount
-                      : list.metaData.hates === 0
-                      ? 0
-                      : list.metaData.hates - 1,
+                  likes: response.data.reaction_count.like,
+
+                  hates: response.data.reaction_count.hate,
                 },
               }
             : list
@@ -360,16 +351,10 @@ const CollaborationListPage = () => {
                   </Link>
                 </h2>
               </div>
-              <p className="text-gray-600 mb-4">{list.metaData.description}</p>
-              {list.metaData.links && (
-                <a
-                  href={list.metaData.links}
-                  target="_blank"
-                  className="text-blue-500 hover:underline"
-                >
-                  {list.metaData.links}
-                </a>
-              )}
+              <p className="text-gray-600 mb-4 break-words">
+                {list.metaData.description}
+              </p>
+
               <div className="overflow-x-auto mt-6">
                 <table className="min-w-full border-collapse border border-gray-300">
                   <thead>

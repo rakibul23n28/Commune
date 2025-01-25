@@ -5,14 +5,13 @@ import CommuneNavbar from "../components/CommuneNavbar";
 import CommuneFixedNav from "../components/CommuneFixedNav";
 import { getAuthHeaders } from "../utils/Helper";
 import { useParams } from "react-router-dom";
-
 import { useCommuneMembership } from "../context/CommuneMembershipContext";
+
 const DynamicListingForm = () => {
   const { communeid } = useParams();
   const [metaData, setMetaData] = useState({
     title: "",
     description: "",
-    links: "",
     tags: "",
   });
   const [columns, setColumns] = useState([]);
@@ -30,7 +29,7 @@ const DynamicListingForm = () => {
         try {
           await fetchCommuneData(communeid); // Fetch commune data from the context
         } catch (err) {
-          setErrorMessage(
+          console.error(
             err.response?.data?.message || "Failed to load commune data"
           );
         } finally {
@@ -40,13 +39,13 @@ const DynamicListingForm = () => {
     };
 
     loadCommuneData();
-  }, [communeid, fetchCommuneData, communeData]); // Add communeData to the dependency array
+  }, [communeid, fetchCommuneData, communeData]);
 
   useEffect(() => {
     if (communeData) {
-      setCommune(communeData); // Update commune state after communeData has been fetched
+      setCommune(communeData);
     }
-  }, [communeData]); // Watch for changes in communeData and update state accordingly
+  }, [communeData]);
 
   const handleMetaDataChange = (field, value) => {
     setMetaData((prev) => ({ ...prev, [field]: value }));
@@ -55,7 +54,6 @@ const DynamicListingForm = () => {
   const [count, setCount] = useState(0);
 
   const handleAddColumn = () => {
-    // Ensure unique column names
     const newColumnName = count + " Column";
     setColumns([...columns, { name: newColumnName, type: "text" }]);
     setCount(count + 1);
@@ -76,7 +74,7 @@ const DynamicListingForm = () => {
     let flag = true;
     if (field === "name" && columns.some((column) => column.name === value)) {
       setColumnMessage(
-        "Column name must be unique. OtherWise it cause errors."
+        "Column name must be unique. Otherwise, it may cause errors."
       );
       flag = false;
     }
@@ -138,7 +136,7 @@ const DynamicListingForm = () => {
         }
       );
       alert("Data successfully saved!");
-      location.href = `/commune/${communeid}`;
+      location.href = `/commune/${communeid}/lists`;
     } catch (error) {
       console.error("Error saving data:", error);
       alert("Error saving data");
@@ -195,19 +193,6 @@ const DynamicListingForm = () => {
 
             <div className="flex flex-col">
               <label className="text-base font-medium text-gray-700 mb-2">
-                Link
-              </label>
-              <input
-                type="url"
-                placeholder="Enter link"
-                value={metaData.links}
-                onChange={(e) => handleMetaDataChange("links", e.target.value)}
-                className="p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-300 transition"
-              />
-            </div>
-
-            <div className="flex flex-col">
-              <label className="text-base font-medium text-gray-700 mb-2">
                 Tags (optional)
               </label>
               <input
@@ -241,7 +226,7 @@ const DynamicListingForm = () => {
 
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
           <h2 className="text-2xl font-semibold mb-4 text-gray-700">
-            Define Table Structure rewrite Column Names
+            Define Table Structure and Column Names
           </h2>
           {columnMessage && <p className="text-red-500">{columnMessage}</p>}
           <form>
@@ -266,7 +251,6 @@ const DynamicListingForm = () => {
                 >
                   <option value="text">Text</option>
                   <option value="number">Number</option>
-                  <option value="link">Link</option>
                 </select>
                 <button
                   type="button"
@@ -287,7 +271,6 @@ const DynamicListingForm = () => {
           </form>
         </div>
 
-        {/* Step 3: Row Data */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-2xl font-semibold mb-4 text-gray-700">
             Enter Table Data
@@ -353,6 +336,7 @@ const DynamicListingForm = () => {
             >
               Add Row
             </button>
+
             <button
               type="submit"
               onClick={handleRowSubmit}

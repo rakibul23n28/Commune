@@ -167,32 +167,54 @@ const CommuneEventsPage = () => {
       <CommuneFixedNav />
       <CommuneNavbar name={`${commune?.name}`} />
       {errorMessage && <div className="text-red-500 mb-4">{errorMessage}</div>}
-      <div className=" mx-40 flex bg-white rounded-lg shadow-md -z-9">
-        <div className="space-y-6">
-          <div className="w-1/2 bg-white p-6 rounded-lg shadow-md">
+      <div className="mx-40 flex bg-white rounded-lg shadow-md -z-9">
+        <div className="flex w-full space-x-6">
+          {/* Upcoming Events (2 Columns) */}
+          <div className="w-2/3 bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
+            <div className="grid grid-cols-2 gap-6">
+              {events.map((event) => (
+                <div
+                  key={event.event_id}
+                  className="bg-white p-6 border rounded-lg shadow-md relative h-fit"
+                >
+                  <Link to={`/commune/${communeid}/event/${event.event_id}`}>
+                    <h3 className="text-xl font-semibold mt-4">
+                      {event.event_name}
+                    </h3>
+                  </Link>
+                  <p className="text-gray-600">
+                    Organized by {event.created_by_username} on{" "}
+                    <span className="font-semibold">
+                      {new Date(event.event_date).toLocaleDateString()}
+                    </span>
+                    <span className="text-gray-600 text-sm">
+                      {new Date(event.event_date).toLocaleTimeString()}
+                    </span>
+                  </p>
+                  {event.event_image && (
+                    <img
+                      src={event.event_image}
+                      alt={event.event_name}
+                      className="mt-4 w-full max-h-48 object-cover rounded"
+                    />
+                  )}
+                  <div className="mt-4 text-sm">
+                    {event.event_description.length > 100 ? (
+                      <>
+                        {event.event_description.slice(0, 100)}...
+                        <Link
+                          to={`/commune/${communeid}/event/${event.event_id}`}
+                          className="text-blue-500 hover:text-blue-700"
+                        >
+                          Read more
+                        </Link>
+                      </>
+                    ) : (
+                      event.event_description
+                    )}
+                  </div>
 
-            {events.map((event) => (
-              <div
-                key={event.event_id}
-                className="bg-white p-6 border rounded-lg shadow-md relative"
-              >
-                <h3 className="text-xl font-semibold">{event.event_name}</h3>
-                <p className="text-gray-600">
-                  Organized by {event.created_by_username} on{" "}
-                  {new Date(event.event_date).toLocaleString()}
-                </p>
-                {event.event_image && (
-                  <img
-                    src={event.event_image}
-                    alt={event.event_name}
-                    className="mt-4 w-full rounded"
-                  />
-                )}
-                <div className="mt-4">{event.event_description}</div>
-
-                {(getRole(communeid) === "admin" ||
-                  user.id === event.created_by) && (
                   <div className="absolute top-2 right-2">
                     <button
                       onClick={() => handleCollaborationClick(event.event_id)}
@@ -206,76 +228,102 @@ const CommuneEventsPage = () => {
                     >
                       <i className="fas fa-ellipsis-v"></i>
                     </button>
-                    {showOptions === event.event_id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
-                        <button
-                          onClick={() => handleEditEvent(event.event_id)}
-                          className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteEvent(event.event_id)}
-                          className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                    {(getRole(communeid) === "admin" ||
+                      user.id === event.created_by) && (
+                      <>
+                        {showOptions === event.event_id && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
+                            <button
+                              onClick={() => handleEditEvent(event.event_id)}
+                              className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEvent(event.event_id)}
+                              className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* Collaborative Events */}
-        <div className="w-1/2 bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4">Collaborative Events</h2>
-          {collaborativeEvents.length > 0 ? (
-            <div className="space-y-6">
-              {collaborativeEvents.map((event) => (
-                <div
-                  key={event.event_id}
-                  className="bg-white p-6 border rounded-lg shadow-md relative"
-                >
-                  {(getRole(communeid) === "admin" ||
-                    getRole(communeid) === "moderator") && (
-                    <button
-                      onClick={() => handleDeleteCollaboration(event.event_id)}
-                      className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
-                    >
-                      <i className="fas fa-trash mr-2"></i> Collaboration
-                    </button>
-                  )}
-                  <h3 className="text-xl font-semibold">{event.event_name}</h3>
-                  <p className="text-gray-600">
-                    Collaborating with{" "}
-                    <Link to={`/commune/${event.collaborating_commune_id}`}>
-                      <strong className="text-blue-500">
-                        {event.collaborating_commune_name}
-                      </strong>
-                    </Link>
-                  </p>
-                  <img
-                    src={
-                      event.collaborating_commune_image ||
-                      "/default-commune.png"
-                    }
-                    alt={event.collaborating_commune_name}
-                    className="mt-4 w-10 h-10 rounded-full"
-                  />
-                  <p className="mt-2">
-                    Organized on {new Date(event.event_date).toLocaleString()}
-                  </p>
-                  <div className="mt-4 text-wrap">
-                    {event.event_description}
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-gray-500">No collaborative events found.</p>
-          )}
+          </div>
+
+          {/* Collaborative Events (1 Column) */}
+          <div className="w-1/3 bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold mb-4">Collaborative Events</h2>
+            {collaborativeEvents.length > 0 ? (
+              <div className="space-y-6">
+                {collaborativeEvents.map((event) => (
+                  <div
+                    key={event.event_id}
+                    className="bg-white p-6 border rounded-lg shadow-md relative"
+                  >
+                    {(getRole(communeid) === "admin" ||
+                      getRole(communeid) === "moderator") && (
+                      <button
+                        onClick={() =>
+                          handleDeleteCollaboration(event.event_id)
+                        }
+                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                      >
+                        <i className="fas fa-trash mr-2"></i> Collaboration
+                      </button>
+                    )}
+                    <Link
+                      to={`/commune/${event.collaborating_commune_id}/event/${event.event_id}`}
+                    >
+                      <h3 className="text-xl font-semibold">
+                        {event.event_name}
+                      </h3>
+                    </Link>
+                    <p className="text-gray-600">
+                      Collaborating with{" "}
+                      <Link to={`/commune/${event.collaborating_commune_id}`}>
+                        <strong className="text-blue-500">
+                          {event.collaborating_commune_name}
+                        </strong>
+                      </Link>
+                    </p>
+                    <img
+                      src={
+                        event.collaborating_commune_image ||
+                        "/default-commune.png"
+                      }
+                      alt={event.collaborating_commune_name}
+                      className="mt-4 w-10 h-10 rounded-full"
+                    />
+                    <p className="mt-2">
+                      Organized on {new Date(event.event_date).toLocaleString()}
+                    </p>
+                    <div className="mt-4 text-sm">
+                      {event.event_description.length > 100 ? (
+                        <>
+                          {event.event_description.slice(0, 100)}...
+                          <Link
+                            to={`/commune/${event.collaborating_commune_id}/event/${event.event_id}`}
+                            className="text-blue-500 hover:text-blue-700"
+                          >
+                            Read more
+                          </Link>
+                        </>
+                      ) : (
+                        event.event_description
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No collaborative events found.</p>
+            )}
+          </div>
         </div>
       </div>
 

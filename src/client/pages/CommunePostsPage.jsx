@@ -164,18 +164,9 @@ const CommunePostsPage = () => {
             ? {
                 ...post,
                 userReaction: type, // Track the user's reaction
-                likes:
-                  type === "like" && userReaction !== "like"
-                    ? response.data.reaction_count // Update likes if it's a new "like"
-                    : post.likes === 0
-                    ? 0
-                    : post.likes - 1,
-                hates:
-                  type === "hate" && userReaction !== "hate"
-                    ? response.data.reaction_count // Update hates if it's a new "hate"
-                    : post.hates === 0
-                    ? 0
-                    : post.hates - 1,
+                likes: response.data.reaction_count.like,
+
+                hates: response.data.reaction_count.hate,
               }
             : post
         )
@@ -296,9 +287,11 @@ const CommunePostsPage = () => {
                       className="w-12 h-12 rounded-full mr-4 border"
                     />
                     <div>
-                      <p className="text-lg font-medium text-gray-800">
-                        {post.username}
-                      </p>
+                      <Link to={`/profile/${post.username}`}>
+                        <p className="text-lg font-medium text-gray-800 hover:underline">
+                          {post.username}
+                        </p>
+                      </Link>
                       <p className="text-sm text-gray-500">
                         {timeAgo(post.created_at)} ago
                       </p>
@@ -347,10 +340,12 @@ const CommunePostsPage = () => {
                   </div>
                 </div>
                 <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-                  {post.title}
+                  <Link to={`/commune/${communeid}/post/${post.post_id}`}>
+                    {post.title}
+                  </Link>
                 </h3>
                 <div
-                  className="text-gray-700 overflow-hidden max-h-96 overflow-ellipsis"
+                  className="text-gray-700 overflow-hidden max-h-96 overflow-ellipsis break-words"
                   dangerouslySetInnerHTML={{ __html: post.content }}
                 ></div>
                 <a

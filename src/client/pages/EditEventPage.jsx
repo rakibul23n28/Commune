@@ -21,6 +21,10 @@ const EditEventPage = () => {
   const [eventImage, setEventImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
+  // Character count state
+  const maxDescriptionLength = 180;
+  const [descriptionLength, setDescriptionLength] = useState(0);
+
   useEffect(() => {
     const fetchEventDetails = async () => {
       try {
@@ -29,8 +33,15 @@ const EditEventPage = () => {
         setEvent(eventData);
         setEventName(eventData.event_name);
         setEventDescription(eventData.event_description);
-        setEventDate(eventData.event_date);
+
+        // Ensure the event date is formatted correctly for the datetime-local input
+        const formattedDate = new Date(eventData.event_date)
+          .toISOString()
+          .slice(0, 16); // 'YYYY-MM-DDTHH:MM'
+        setEventDate(formattedDate);
+
         setImagePreview(eventData.event_image);
+        setDescriptionLength(eventData.event_description.length);
       } catch (err) {
         setErrorMessage("Failed to load event details.");
         console.error("Error fetching event details:", err);
@@ -91,25 +102,43 @@ const EditEventPage = () => {
     }
   };
 
+  const handleDescriptionChange = (e) => {
+    const newDescription = e.target.value;
+    if (newDescription.length <= maxDescriptionLength) {
+      setEventDescription(newDescription);
+      setDescriptionLength(newDescription.length);
+    }
+  };
+
+  const getDescriptionCounterColor = () => {
+    if (descriptionLength === maxDescriptionLength) {
+      return "text-black"; // Change to black when max length is reached
+    } else if (descriptionLength > maxDescriptionLength * 0.75) {
+      return "text-black"; // Change to black when description is approaching max
+    } else {
+      return "text-black"; // Use black text for normal description length
+    }
+  };
+
   if (loading) {
-    return <div>Loading event details...</div>;
+    return <div className="text-black">Loading event details...</div>;
   }
 
   return (
     <Layout>
       <CommuneFixedNav />
       <CommuneNavbar name={communeData?.name} />
-      <div className="w-1/2 mx-auto p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-4">Edit Event</h2>
+      <div className="w-full md:w-1/2 mx-auto p-8 bg-white rounded-lg shadow-xl">
+        <h2 className="text-3xl font-extrabold text-black mb-4">Edit Event</h2>
         {errorMessage && (
-          <div className="text-red-500 mb-4">{errorMessage}</div>
+          <div className="text-red-500 mb-4 font-semibold">{errorMessage}</div>
         )}
-        <div className="bg-white p-6 border rounded-lg shadow-md">
+        <div className="bg-white p-6 rounded-lg shadow-lg">
           <form onSubmit={handleEditEvent}>
-            <div className="mb-4">
+            <div className="mb-6">
               <label
                 htmlFor="eventName"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-lg font-medium text-black"
               >
                 Event Name
               </label>
@@ -118,32 +147,37 @@ const EditEventPage = () => {
                 type="text"
                 value={eventName}
                 onChange={(e) => setEventName(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-2 block w-full p-3 border-2 border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-400 text-black bg-white"
                 required
               />
             </div>
 
-            <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-2">
+            <div className="mb-6">
+              <label className="block text-lg font-medium text-black mb-2">
                 Event Description
               </label>
               <textarea
                 value={eventDescription}
-                onChange={(e) => setEventDescription(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-300 focus:outline-none"
+                onChange={handleDescriptionChange}
+                className="w-full p-3 border-2 border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-400 text-black bg-white"
                 rows="4"
                 required
               ></textarea>
+              <div className="mt-2 text-right">
+                <span className={getDescriptionCounterColor()}>
+                  {descriptionLength}/{maxDescriptionLength}
+                </span>
+              </div>
             </div>
 
-            <div className="mb-4">
-              <h1>
+            <div className="mb-6">
+              <h1 className="text-lg font-medium text-black mb-2">
                 Previous Event Date:{" "}
                 {new Date(event.event_date).toLocaleString()}
               </h1>
               <label
                 htmlFor="eventDate"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-lg font-medium text-black"
               >
                 Event Date
               </label>
@@ -152,15 +186,15 @@ const EditEventPage = () => {
                 type="datetime-local"
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-2 block w-full p-3 border-2 border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-400 text-black bg-white"
                 required
               />
             </div>
 
-            <div className="mb-4">
+            <div className="mb-6">
               <label
                 htmlFor="eventImage"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-lg font-medium text-black"
               >
                 Event Image
               </label>
@@ -169,15 +203,15 @@ const EditEventPage = () => {
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-2 block w-full p-3 border-2 border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-400 text-black bg-white"
               />
               {imagePreview && (
                 <div className="mt-4">
-                  <p className="text-gray-700 text-sm mb-2">Image Preview:</p>
+                  <p className="text-black text-sm mb-2">Image Preview:</p>
                   <img
                     src={imagePreview}
                     alt="Event Preview"
-                    className="w-32 h-32 object-cover rounded-md"
+                    className="w-32 h-32 object-cover rounded-md shadow-md"
                   />
                 </div>
               )}
@@ -186,7 +220,7 @@ const EditEventPage = () => {
             <div className="mb-4">
               <button
                 type="submit"
-                className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Save Changes
               </button>
