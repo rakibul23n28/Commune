@@ -9,6 +9,7 @@ import communeRoute from "./routes/communeRoutes.js";
 import collaborationRoute from "./routes/collaborationRoute.js";
 import postRoute from "./routes/postRoute.js";
 import chatRoute from "./routes/chatRoute.js";
+import cartRoute from "./routes/cartRoute.js";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api/auth", authRoute);
 app.use("/api/post", postRoute);
 app.use("/api/user", userRoute);
 app.use("/api/chat", chatRoute);
+app.use("/api/cart", cartRoute);
 app.use("/api", staticRoute);
 // app.use("/api/notes", noteRoute);
 

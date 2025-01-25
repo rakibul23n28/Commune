@@ -65,7 +65,6 @@ const App = () => (
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/home2" element={<Home2 />} />
         <Route path="/" element={<Home />} />
         <Route path="/profile/:username" element={<Profile />} />
         <Route path="/verify" element={<VerifyAccount />} />
