@@ -134,11 +134,11 @@ const ViewCommune = () => {
                 className="max-w-md h-96 object-cover rounded-lg shadow-md"
               />
             </div>
-            <p className="border-4 border-red-200 rounded-lg "></p>
+            <hr className="border-4 border-red-100 rounded-lg w-48" />
             <div className="mt-6">
               <div className="mb-4">
                 <div
-                  className="mt-4"
+                  className="mt-4 break-words"
                   dangerouslySetInnerHTML={{
                     __html: commune?.content,
                   }}

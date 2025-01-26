@@ -717,29 +717,9 @@ export const joinCommune = async (req, res) => {
       userId,
     ]);
 
-    // If the commune is not private, add the user to the chat participants
-    if (commune[0].privacy !== "private") {
-      // Fetch the chat ID for the commune
-      const [chat] = await pool.query(
-        "SELECT chat_id FROM chats WHERE commune_id = ?",
-        [communeId]
-      );
-
-      if (chat.length > 0) {
-        const chatId = chat[0].chat_id;
-
-        // Add the user as a chat participant
-        const addParticipantQuery = `
-          INSERT INTO chat_participants (chat_id, user_id)
-          VALUES (?, ?)
-        `;
-        await pool.query(addParticipantQuery, [chatId, userId]);
-      }
-    }
-
     return res.status(200).json({
       message: "Successfully joined the commune",
-      data: { communeId, userId, role: "member", status: joinStatus },
+      data: { communeId, userId, role: "member", status: "pending" },
     });
   } catch (err) {
     console.error("Error joining commune:", err);

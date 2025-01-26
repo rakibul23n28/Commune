@@ -157,7 +157,7 @@ const Profile = () => {
                     className={`border p-4 rounded-lg shadow-md transition-all duration-300 w-full max-w-3xl my-8 ${
                       expandedCommuneId === commune.commune_id
                         ? "h-auto"
-                        : "h-52"
+                        : "h-96 overflow-hidden"
                     }`}
                     onDoubleClick={() =>
                       toggleCommuneExpansion(commune.commune_id)

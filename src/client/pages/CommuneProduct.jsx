@@ -173,54 +173,86 @@ const CommuneProduct = () => {
 
         {/* Cart Card */}
         {isCartOpen && (
-          <div className="fixed top-48 right-4 w-80 bg-white p-4 rounded-lg shadow-lg z-50">
-            <h2 className="text-xl font-bold mb-4">Your Cart</h2>
+          <div className="fixed top-44 right-4 w-96 bg-white p-6 rounded-2xl shadow-2xl z-50 border border-gray-200">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+              Your Cart
+            </h2>
             {cart?.length === 0 ? (
-              <p>Your cart is empty.</p>
+              <p className="text-gray-600 text-center">Your cart is empty.</p>
             ) : (
               <>
-                {cart.map((item) => (
-                  <div
-                    key={item.product_id}
-                    className="flex justify-between items-center mb-4"
-                  >
-                    <h3>{item.product_name}</h3>
-                    <div className="flex items-center space-x-4">
-                      <button
-                        className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-md flex items-center"
-                        onClick={() => handleRemoveFromCart(item.product_id)}
-                      >
-                        <i className="fas fa-trash mr-1"></i> Remove
-                      </button>
-                      <button
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md flex items-center"
-                        onClick={() =>
-                          handleUpdateQuantity(
-                            item.product_id,
-                            item.quantity - 1
-                          )
-                        }
-                        disabled={item.quantity <= 1}
-                      >
-                        <i className="fas fa-minus mr-1"></i>
-                      </button>
-                      <span>{item.quantity}</span>
-                      <button
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md flex items-center"
-                        onClick={() =>
-                          handleUpdateQuantity(
-                            item.product_id,
-                            item.quantity + 1
-                          )
-                        }
-                      >
-                        <i className="fas fa-plus mr-1"></i>
-                      </button>
+                <div className="space-y-4 h-80 overflow-y-auto overflow-x-hidden">
+                  {cart.map((item) => (
+                    <div
+                      key={item.product_id}
+                      className="flex flex-col gap-4 justify-between p-4 bg-gray-50 rounded-xl shadow-sm"
+                    >
+                      {/* Image and Name */}
+                      <div className="flex items-center space-x-4">
+                        <img
+                          src={item.product_image}
+                          alt={item.product_name}
+                          className="h-12 w-12 object-cover rounded-lg"
+                        />
+                        <div>
+                          <h3 className="text-lg font-medium text-gray-700">
+                            {item.product_name}
+                          </h3>
+                          <p className="text-sm text-gray-500 overflow-hidden break-word">
+                            {item.description.slice(0, 25)}
+                            {item.description.length > 25 && "..."}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Buttons and Quantity */}
+                      <div className="flex items-center space-x-3">
+                        <button
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg flex items-center shadow"
+                          onClick={() => handleRemoveFromCart(item.product_id)}
+                        >
+                          <i className="fas fa-trash mr-1"></i> Remove
+                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            className={`bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg ${
+                              item.quantity <= 1
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                            onClick={() =>
+                              handleUpdateQuantity(
+                                item.product_id,
+                                item.quantity - 1
+                              )
+                            }
+                            disabled={item.quantity <= 1}
+                          >
+                            <i className="fas fa-minus"></i>
+                          </button>
+                          <span className="font-medium text-gray-700">
+                            {item.quantity}
+                          </span>
+                          <button
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg"
+                            onClick={() =>
+                              handleUpdateQuantity(
+                                item.product_id,
+                                item.quantity + 1
+                              )
+                            }
+                          >
+                            <i className="fas fa-plus"></i>
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+
+                {/* Place Order Button */}
                 <button
-                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md w-full flex items-center justify-center"
+                  className="mt-6 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl w-full text-lg font-semibold shadow-lg flex items-center justify-center"
                   onClick={handlePlaceOrder}
                 >
                   <i className="fas fa-check mr-2"></i> Place Order
@@ -243,7 +275,7 @@ const CommuneProduct = () => {
             {products.map((product) => (
               <div
                 key={product.product_id}
-                className="bg-gray-100 p-4 rounded-lg shadow-md"
+                className="bg-gray-100 p-4 rounded-lg shadow-md h-fit"
               >
                 <div className="flex items-center mb-4">
                   <img

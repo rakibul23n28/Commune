@@ -215,15 +215,7 @@ const CommuneNavbar = ({ name = "" }) => {
                     <i className="fas fa-edit mr-2 text-orange-600"></i>
                     Edit
                   </button>
-                  <button
-                    onClick={() =>
-                      handleNavigation(`/commune/${communeid}/manage`)
-                    }
-                    className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"
-                  >
-                    <i className="fas fa-sliders-h mr-2 text-teal-600"></i>
-                    Manage
-                  </button>
+
                   <button
                     onClick={() => handleDelete(communeid, commune.name)}
                     className="flex items-center px-4 py-2 hover:bg-gray-200 w-full text-left"

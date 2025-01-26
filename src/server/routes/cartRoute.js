@@ -9,7 +9,7 @@ router.get("/:userId", async (req, res) => {
   try {
     const query = `
         SELECT c.cart_id AS cart_id, c.quantity, 
-               p.product_id , p.product_name, p.price, p.product_name
+               p.product_id , p.product_name, p.price, p.product_image,p.description
         FROM cart c
         JOIN products p ON c.product_id = p.product_id
         WHERE c.user_id = ?

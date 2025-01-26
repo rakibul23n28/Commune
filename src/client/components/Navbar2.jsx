@@ -115,12 +115,6 @@ function Navbar() {
                 icon="fas fa-comments"
                 isActive={isActive("/chat")}
               />
-              <LinkBar
-                title="Notifications"
-                to="/notifications"
-                icon="fas fa-bell"
-                isActive={isActive("/notifications")}
-              />
             </>
           )}
           {user ? (
