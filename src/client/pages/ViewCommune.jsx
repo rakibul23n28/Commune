@@ -13,8 +13,7 @@ import Navbar from "../components/Navbar";
 const ViewCommune = () => {
   const { communeid } = useParams();
   const { user } = useAuth(); // Accessing user from AuthContext
-  const { fetchMembershipStatus, isMember, getRole, joinCommune } =
-    useCommuneMembership();
+  const { leaveCommune, getRole } = useCommuneMembership();
   const navigate = useNavigate();
 
   const [commune, setCommune] = useState(null);

@@ -100,23 +100,6 @@ const CreatePostPage = () => {
       <CommuneFixedNav />
       <CommuneNavbar name={commune?.name} />
       <div className="w-1/2 mx-auto p-6 bg-white rounded-lg shadow-md">
-        {commune && (
-          <div className="max-w-sm mx-auto mb-6 p-4 border rounded-lg shadow-md bg-white">
-            <h1 className="text-2xl font-semibold mb-2">{commune.name}</h1>
-            <p className="text-sm text-gray-600">{commune.description}</p>
-            <div className="mt-4">
-              <p>
-                <strong>Location:</strong> {commune.location || "Not provided"}
-              </p>
-              <p>
-                <strong>Privacy:</strong> {commune.privacy}
-              </p>
-              <p>
-                <strong>Commune Type:</strong> {commune.commune_type}
-              </p>
-            </div>
-          </div>
-        )}
         <h2 className="text-2xl font-bold mb-4">Create a Post</h2>
         {errorMessage && (
           <div className="text-red-500 mb-4">{errorMessage}</div>

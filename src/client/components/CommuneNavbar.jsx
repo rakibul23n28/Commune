@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { useCommuneMembership } from "../context/CommuneMembershipContext";
 import { useAuth } from "../context/AuthContext";
 import { getAuthHeaders } from "../utils/Helper";
@@ -185,13 +185,20 @@ const CommuneNavbar = ({ name = "" }) => {
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => setShowUserDropdown((prevState) => !prevState)}
+              <Link
+                to={`/commune/${communeid}/carts`}
                 className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
               >
                 <i className="fas fa-shopping-cart mr-2"></i>
                 Cart
-              </button>
+              </Link>
+              <Link
+                to={`/commune/${communeid}/orders`}
+                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
+              >
+                <i className="fas fa-list mr-2"></i>
+                Order
+              </Link>
             </>
           )}
           {(membershipStatus === "admin" ||

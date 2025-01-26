@@ -55,10 +55,12 @@ import OnlyAdmin from "./utils/OnlyAdmin";
 import CommuneSendRequest from "./pages/CommuneSendRequest";
 import CommuneMemberManagement from "./pages/CommuneMemberManagement";
 
+//cart
+import CartPage from "./pages/CartPage";
+import OrdersPage from "./pages/OrdersPage";
 //chat
 import { ChatProvider } from "./context/ChatContext";
 import ChatPage from "./pages/ChatPage";
-
 //varify
 import VerifyAccount from "./pages/VerifyAccount";
 
@@ -81,6 +83,8 @@ const App = () => (
                 <Route path="" element={<AllCommunes />} />
                 <Route path=":communeid/posts" element={<CommunePostsPage />} />
                 <Route path=":communeid/lists" element={<CommuneListsPage />} />
+                <Route path=":communeid/carts" element={<CartPage />} />
+                <Route path=":communeid/orders" element={<OrdersPage />} />
                 <Route
                   path=":communeid/products"
                   element={<CommuneProduct />}

@@ -3,6 +3,87 @@ import { pool } from "../config/database.js"; // Assume you have a database conn
 import { validateToken } from "../middleware/auth.js";
 const router = express.Router();
 
+// Fetch all orders with their items for a user
+router.get("/orders/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Fetch all orders for the user
+    const [orders] = await pool.query(
+      "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC",
+      [userId]
+    );
+
+    // Fetch order items for each order
+    const orderIds = orders.map((order) => order.order_id);
+    const [orderItems] = await pool.query(
+      "SELECT * FROM order_items WHERE order_id IN (?)",
+      [orderIds]
+    );
+
+    // Combine orders with their items
+    const ordersWithItems = orders.map((order) => ({
+      ...order,
+      items: orderItems.filter((item) => item.order_id === order.order_id),
+    }));
+
+    res.json({ orders: ordersWithItems });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch orders." });
+  }
+});
+
+router.post("/orders/create", async (req, res) => {
+  const { userId, cart } = req.body;
+
+  if (!userId || !cart || cart.length === 0) {
+    return res.status(400).json({ message: "Invalid order data." });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Calculate total amount
+    const totalAmount = cart.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    );
+
+    // Insert into orders table
+    const [orderResult] = await connection.query(
+      "INSERT INTO orders (user_id, total_amount) VALUES (?, ?)",
+      [userId, totalAmount]
+    );
+    const orderId = orderResult.insertId;
+
+    // Insert into order_items table
+    const orderItems = cart.map((item) => [
+      orderId,
+      item.product_id,
+      item.quantity,
+      item.price,
+    ]);
+
+    await connection.query(
+      "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ?",
+      [orderItems]
+    );
+
+    // Clear the cart
+    await connection.query("DELETE FROM cart WHERE user_id = ?", [userId]);
+
+    await connection.commit();
+
+    res.status(201).json({ message: "Order placed successfully." });
+  } catch (error) {
+    await connection.rollback();
+    res.status(500).json({ message: "Failed to place order." });
+  } finally {
+    connection.release();
+  }
+});
+
 // Fetch cart items for a specific user
 router.get("/:userId", async (req, res) => {
   const { userId } = req.params;
@@ -17,6 +98,31 @@ router.get("/:userId", async (req, res) => {
       `;
 
     const [cartItems] = await pool.execute(query, [userId]);
+
+    if (!cartItems.length) {
+      return res.status(200).json({ cart: [] });
+    }
+
+    res.status(200).json({ cart: cartItems });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to load cart items." });
+  }
+});
+
+router.get("/:communeId/:userId", async (req, res) => {
+  const { communeId, userId } = req.params;
+
+  try {
+    const query = `
+        SELECT c.cart_id AS cart_id, c.quantity, 
+               p.product_id , p.product_name, p.price, p.product_image,p.description
+        FROM cart c
+        JOIN products p ON c.product_id = p.product_id
+        WHERE c.user_id = ? AND p.commune_id = ?
+      `;
+
+    const [cartItems] = await pool.execute(query, [userId, communeId]);
 
     if (!cartItems.length) {
       return res.status(200).json({ cart: [] });

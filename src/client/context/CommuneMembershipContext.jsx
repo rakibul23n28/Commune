@@ -76,7 +76,7 @@ export const CommuneMembershipProvider = ({ children }) => {
       );
 
       if (response.data.data.status === "private") {
-        alert("Private Commune wait until approved");
+        alert("Private Commune: Wait until approved.");
       }
 
       const { role } = response.data.data; // Assume response contains the role
@@ -89,6 +89,26 @@ export const CommuneMembershipProvider = ({ children }) => {
       }
       console.error("Error joining commune:", error);
       throw error; // Rethrow to handle in the calling component
+    }
+  };
+
+  // Leave a commune and update the state
+  const leaveCommune = async (communeId) => {
+    try {
+      await axios.delete(`/api/commune/membership/${communeId}/delete`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+
+      updateMembership(communeId, null); // Remove membership status for this commune
+      alert(`Successfully left the commune ${communeId}`);
+    } catch (error) {
+      if (error.response && error.response.data?.message) {
+        alert(error.response.data.message);
+      }
+      console.error("Error leaving commune:", error);
+      throw error; // Rethrow for handling in the calling component
     }
   };
 
@@ -112,6 +132,7 @@ export const CommuneMembershipProvider = ({ children }) => {
         fetchMembershipStatus,
         updateMembership,
         joinCommune, // Added joinCommune method
+        leaveCommune, // Added leaveCommune method
         isMember,
         getRole,
       }}
