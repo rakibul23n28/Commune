@@ -121,8 +121,8 @@ const ViewCommune = () => {
           {/* Left Column: Commune Content */}
           <div className="col-span-2 p-6 w-full max-w-3xl border-2 rounded-md">
             {/* Commune Image and Name */}
-            <div className="flex flex-row mb-4 gap-1">
-              <div className="flex flex-col gap-2 items-center justify-center">
+            <div className="flex flex-row mb-4 gap-1 justify-between">
+              <div className="flex flex-col gap-2  justify-center">
                 <h3 className="font-semibold truncate text-3xl">
                   {commune.name}
                 </h3>
@@ -131,7 +131,7 @@ const ViewCommune = () => {
               <img
                 src={commune.commune_image}
                 alt={`${commune.name} Image`}
-                className="max-w-md h-96 object-cover rounded-lg shadow-md"
+                className="max-w-md h-48 object-cover rounded-full shadow-md"
               />
             </div>
             <hr className="border-4 border-red-100 rounded-lg w-48" />

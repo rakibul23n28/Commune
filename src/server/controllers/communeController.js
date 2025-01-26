@@ -1804,3 +1804,91 @@ export const getCommuneProducts = async (req, res) => {
     res.status(500).json({ error: "Error fetching products" });
   }
 };
+
+export const getCommuneProduct = async (req, res) => {
+  const { productid } = req.params;
+
+  try {
+    const [product] = await pool.query(
+      `SELECT p.*, u.username , u.profile_image
+       FROM products p
+       JOIN users u ON p.user_id = u.user_id
+       WHERE p.product_id = ?`,
+      [productid]
+    );
+
+    res.status(200).json({ product: product[0] });
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    res.status(500).json({ error: "Error fetching product" });
+  }
+};
+export const getSearchCommunes = async (req, res) => {
+  const { category, query } = req.query;
+  const { communeId } = req.params;
+
+  // Validate required parameters
+  if (!category || !query) {
+    return res
+      .status(400)
+      .json({ message: "Category and query are required." });
+  }
+  if (!communeId) {
+    return res.status(400).json({ message: "Commune ID is required." });
+  }
+
+  try {
+    let sql = "";
+    let params = [];
+
+    switch (category) {
+      case "users":
+        sql = `
+          SELECT u.user_id, u.first_name, u.last_name, u.username, u.email, u.profile_image
+          FROM users u
+          JOIN commune_memberships cm ON u.user_id = cm.user_id
+          WHERE cm.join_status = 'approved' and cm.commune_id = ? AND (u.first_name LIKE ? OR u.last_name LIKE ? OR u.username LIKE ?)
+        `;
+        params = [communeId, `%${query}%`, `%${query}%`, `%${query}%`];
+        break;
+
+      case "posts":
+        sql = `
+          SELECT post_id, title, content, post_type, tags
+          FROM posts
+          WHERE commune_id = ? AND (title LIKE ? OR content LIKE ? OR tags LIKE ?)
+        `;
+        params = [communeId, `%${query}%`, `%${query}%`, `%${query}%`];
+        break;
+
+      case "products":
+        sql = `
+          SELECT product_id, product_name, description, price, product_image
+          FROM products
+          WHERE commune_id = ? AND (product_name LIKE ? OR description LIKE ?)
+        `;
+        params = [communeId, `%${query}%`, `%${query}%`];
+        break;
+
+      case "events":
+        sql = `
+          SELECT event_id, event_name, event_description, event_date, event_image
+          FROM events
+          WHERE commune_id = ? AND (event_name LIKE ? OR event_description LIKE ?)
+        `;
+        params = [communeId, `%${query}%`, `%${query}%`];
+        break;
+
+      default:
+        return res.status(400).json({ message: "Invalid category specified." });
+    }
+
+    // Execute the query
+    const [results] = await pool.query(sql, params);
+
+    res.status(200).json({ data: results });
+  } catch (error) {
+    console.error("Error during search:", error.message);
+    res.status(500).json({ message: "An error occurred during search." });
+  }
+};

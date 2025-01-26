@@ -1,5 +1,6 @@
 import express from "express";
 import { pool } from "../config/database.js"; // Assume you have a database connection setup
+import { validateToken } from "../middleware/auth.js";
 const router = express.Router();
 
 // Fetch cart items for a specific user
@@ -28,8 +29,9 @@ router.get("/:userId", async (req, res) => {
   }
 });
 
-router.post("/add", async (req, res) => {
-  const { userId, productId, quantity } = req.body;
+router.post("/add", validateToken, async (req, res) => {
+  const { productId, quantity } = req.body;
+  const userId = req.user.id;
 
   if (!userId || !productId || !quantity) {
     return res.status(400).json({ message: "Missing required fields" });

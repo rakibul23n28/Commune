@@ -60,7 +60,6 @@ const CreatePostPage = () => {
           {
             title,
             content,
-            links: links,
             tags: tags,
           },
           {
@@ -149,41 +148,6 @@ const CreatePostPage = () => {
               <div className="h-96 bg-gray-50 rounded-lg overflow-hidden shadow-inner">
                 <QuillEditor value={content} onChange={setContent} />
               </div>
-            </div>
-
-            <div className="mb-4">
-              <label
-                htmlFor="links"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Links (separated by space)
-              </label>
-              <input
-                id="links"
-                type="text"
-                value={links}
-                onChange={(e) => setLinks(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Add any relevant links"
-              />
-              {links && (
-                <div className="mt-2">
-                  <h3 className="text-sm font-medium text-gray-700">Links:</h3>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {links.split(" ").map((link, index) => (
-                      <a
-                        key={index}
-                        href={link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block bg-green-100 text-green-800 text-xs font-semibold py-1 px-2 rounded-full hover:bg-green-200"
-                      >
-                        {link}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="mb-4">

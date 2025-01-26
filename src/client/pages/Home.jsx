@@ -196,7 +196,7 @@ const Home = () => {
     <Layout>
       <div className=" w-full mx-auto relative">
         {user && (
-          <div className="w-52 flex-shrink-0 bg-white p-4 rounded-lg shadow-md fixed mt-8 ml-16 z-50">
+          <div className="w-52 flex-shrink-0 bg-white p-4  shadow-md fixed mt-8 ml-16 z-40">
             <h2 className="text-lg font-bold mb-4">Interests</h2>
             <div className="mb-4 relative">
               <input
@@ -362,7 +362,7 @@ const Home = () => {
                         {commune.events.slice(0, 2).map((event, index) => (
                           <div
                             key={index}
-                            className="p-4 rounded-lg border border-gray-200 shadow-md hover:shadow-lg transition-shadow bg-white"
+                            className="p-4  border border-gray-200 shadow-md hover:shadow-lg transition-shadow bg-white"
                           >
                             {/* Event Image */}
                             {event.event_image && (

@@ -317,7 +317,7 @@ const CommuneListsPage = () => {
       <CommuneNavbar name={`${communeData?.name}`} />
       <div className="w-10/12 mx-auto p-6 bg-white rounded-lg shadow-md mt-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
-          Lists for Commune {communeid}
+          Lists for {communeData?.name}
         </h1>
         {lists.length === 0 ? (
           <p className="text-center text-gray-500">No lists available.</p>

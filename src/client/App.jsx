@@ -35,7 +35,8 @@ import ViewEventPage from "./pages/ViewEventPage";
 
 //products
 import CreateProduct from "./pages/CreateProduct";
-import CommuneProduct from "./pages/communeProduct";
+import CommuneProduct from "./pages/CommuneProduct";
+import SingleProduct from "./pages/SingleProduct";
 
 //collaboration
 import CollaborationPostPage from "./pages/CollaborationPostPage";
@@ -213,6 +214,10 @@ const App = () => (
                 <Route
                   path="/:communeid/list/:listid"
                   element={<ViewListPage />}
+                />
+                <Route
+                  path="/:communeid/product/:productid"
+                  element={<SingleProduct />}
                 />
                 <Route
                   path="/:communeid/event/:eventid"

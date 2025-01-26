@@ -79,11 +79,18 @@ const CommuneProduct = () => {
 
   const handleCartClick = async (product) => {
     try {
-      const { data } = await axios.post("/api/cart/add", {
-        userId: user.id,
-        productId: product.product_id,
-        quantity: 1,
-      });
+      const { data } = await axios.post(
+        "/api/cart/add",
+        {
+          productId: product.product_id,
+          quantity: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
       setSuccessMessage(data.message);
       fetchCart(); // Refresh cart
       setTimeout(() => setSuccessMessage(""), 3000);
@@ -157,10 +164,10 @@ const CommuneProduct = () => {
     <Layout>
       <CommuneFixedNav />
       <CommuneNavbar name={communeData?.name || "Commune"} />
-      <div className="relative">
+      <div className="relative ">
         {/* Button to toggle cart */}
         <button
-          className="fixed top-32 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50 flex items-center"
+          className="fixed top-32 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-1 flex items-center"
           onClick={() => setIsCartOpen(!isCartOpen)}
         >
           <i
@@ -195,9 +202,13 @@ const CommuneProduct = () => {
                           className="h-12 w-12 object-cover rounded-lg"
                         />
                         <div>
-                          <h3 className="text-lg font-medium text-gray-700">
-                            {item.product_name}
-                          </h3>
+                          <Link
+                            to={`/commune/${communeid}/product/${item.product_id}`}
+                          >
+                            <h3 className="text-lg font-medium text-gray-700 hover:underline cursor-pointer">
+                              {item.product_name}
+                            </h3>
+                          </Link>
                           <p className="text-sm text-gray-500 overflow-hidden break-word">
                             {item.description.slice(0, 25)}
                             {item.description.length > 25 && "..."}
@@ -302,15 +313,19 @@ const CommuneProduct = () => {
                     className="w-full h-48 object-cover rounded-md mb-4"
                   />
                 )}
-                <h2 className="text-lg font-semibold">
-                  {product.product_name}
-                </h2>
+                <Link
+                  to={`/commune/${communeid}/product/${product.product_id}`}
+                >
+                  <h2 className="text-lg font-semibold text-blue-500 hover:underline">
+                    {product.product_name}
+                  </h2>
+                </Link>
                 <p className="text-gray-600 break-words">
                   {product.description}
                 </p>
                 <div className="border-t border-gray-300 mt-4 flex justify-between items-center">
                   <p className="text-green-600 font-bold mt-2">
-                    ${Number(product.price).toFixed(2)}
+                    {Number(product.price).toFixed(2)}
                   </p>
                   <button
                     className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md mt-2 flex items-center"

@@ -4,6 +4,8 @@ import multer from "multer";
 import { body } from "express-validator";
 
 import {
+  //search
+  getSearchCommunes,
   createCommune,
   getUserCommunes,
   getUserCommunesByCommuneId,
@@ -50,6 +52,7 @@ import {
 
   //products
   createProduct,
+  getCommuneProduct,
   getCommuneProducts,
   getCommunePost,
   // getCommunesByCommuneId,
@@ -143,6 +146,9 @@ router.delete("/event/:eventid", validateToken, deleteCommuneEvent);
 router.get("/list/:listid", getCommuneListing);
 router.put("/list/:listid", validateToken, updateCommuneListing);
 router.delete("/list/:listid", validateToken, deleteCommuneListing);
+
+//product
+router.get("/product/:productid", getCommuneProduct);
 //members
 
 router.get("/commune-members/:communeId", validateToken, getCommuneMembers);
@@ -177,6 +183,9 @@ router.get("/:communeid/events", getCommuneEvents);
 router.get("/:communeid/products", getCommuneProducts);
 //list
 router.get("/:communeid/lists", getCommuneListings);
+
+//search
+router.get("/:communeId/search", getSearchCommunes);
 
 // Route to add a review to a commune
 router.post("/:communeid/reviews", validateToken, setCommuneReview);
