@@ -185,20 +185,24 @@ const CommuneNavbar = ({ name = "" }) => {
                   </div>
                 )}
               </div>
-              <Link
-                to={`/commune/${communeid}/carts`}
-                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
-              >
-                <i className="fas fa-shopping-cart mr-2"></i>
-                Cart
-              </Link>
-              <Link
-                to={`/commune/${communeid}/orders`}
-                className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
-              >
-                <i className="fas fa-list mr-2"></i>
-                Order
-              </Link>
+              {communeData?.commune_type === "ecommerce" && (
+                <>
+                  <Link
+                    to={`/commune/${communeid}/carts`}
+                    className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
+                  >
+                    <i className="fas fa-shopping-cart mr-2"></i>
+                    Cart
+                  </Link>
+                  <Link
+                    to={`/commune/${communeid}/orders`}
+                    className="flex items-center px-4 py-2 rounded-md hover:bg-gray-700 transition"
+                  >
+                    <i className="fas fa-list mr-2"></i>
+                    Order
+                  </Link>
+                </>
+              )}
             </>
           )}
           {(membershipStatus === "admin" ||

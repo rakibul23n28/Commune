@@ -157,6 +157,7 @@ const CommunePostsPage = () => {
         }
       );
       console.log(response.data);
+      console.log(response.data.reaction_count);
 
       // Update the reaction counts based on the new reaction
       setPosts((prevPosts) =>

@@ -42,6 +42,10 @@ const ViewCommune = () => {
   }, [communeid, user]);
 
   const handleReviewSubmit = async () => {
+    if (!getRole(communeid)) {
+      alert("You are not a member of this commune.");
+      return;
+    }
     if (!newReview) {
       alert("Please enter a review before submitting.");
       return;

@@ -251,6 +251,7 @@ const DynamicListingForm = () => {
                 >
                   <option value="text">Text</option>
                   <option value="number">Number</option>
+                  <option value="link">Link</option>
                 </select>
                 <button
                   type="button"

@@ -135,13 +135,13 @@ const Login = () => {
   return (
     <Layout>
       <div className="flex h-screen w-full">
-        <div className="w-1/2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white flex flex-col justify-center items-center p-10">
+        <div className="w-1/2 bg-gradient-to-r from-red-200 to-orange-100 text-white flex flex-col justify-center items-center p-10">
           <img
-            src="https://via.placeholder.com/300"
+            src="/uploads/logo.jpg"
             alt="Placeholder"
             className="mb-6 w-48 h-48 object-cover rounded-full"
           />
-          <p className="text-lg font-semibold mb-4">
+          <p className="text-lg font-semibold mb-4 text-black">
             "Your journey starts here."
           </p>
           <div className="flex flex-col space-y-4">

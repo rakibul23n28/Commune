@@ -147,6 +147,7 @@ const CollaborationListPage = () => {
       );
 
       const updatedReactionCount = response.data.reaction_count;
+      console.log(updatedReactionCount);
 
       // Update the list's reaction data
       setLists((prevLists) =>

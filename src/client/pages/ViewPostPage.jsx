@@ -36,6 +36,7 @@ const ViewPostPage = () => {
           },
         }
       );
+      console.log(response.data);
 
       // Update the reaction counts and user's reaction
       setPost((prevPost) => ({

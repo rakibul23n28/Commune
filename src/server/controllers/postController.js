@@ -23,43 +23,33 @@ export const makeReaction = async (req, res) => {
         "UPDATE reactions SET reaction_type = ? WHERE post_id = ? AND user_id = ?",
         [reaction_type, postid, userId]
       );
-      //count reaction
-      const [countLike] = await pool.query(
-        "SELECT COUNT(*) AS reaction_count FROM reactions WHERE post_id = ? AND reaction_type = 'like'",
-        [postid]
+    } else {
+      // Add new reaction if none exists
+      await pool.query(
+        "INSERT INTO reactions (post_id, user_id, reaction_type) VALUES (?, ?, ?)",
+        [postid, userId, reaction_type]
       );
-      const [countHate] = await pool.query(
-        "SELECT COUNT(*) AS reaction_count FROM reactions WHERE post_id = ? AND reaction_type = 'hate'",
-        [postid]
-      );
-
-      return res.json({
-        message: "Reaction updated successfully.",
-        update: true,
-        reaction_count: {
-          like: countLike[0].reaction_count,
-          hate: countHate[0].reaction_count,
-        },
-      });
     }
 
-    // Add new reaction if none exists
-    await pool.query(
-      "INSERT INTO reactions (post_id, user_id, reaction_type) VALUES (?, ?, ?)",
-      [postid, userId, reaction_type]
+    // Count reactions separately
+    const [countLike] = await pool.query(
+      "SELECT COUNT(*) AS reaction_count FROM reactions WHERE post_id = ? AND reaction_type = 'like'",
+      [postid]
     );
-    // count reaction
-    const [reactionCount] = await pool.query(
-      "SELECT COUNT(*) AS reaction_count FROM reactions WHERE post_id = ?",
+    const [countHate] = await pool.query(
+      "SELECT COUNT(*) AS reaction_count FROM reactions WHERE post_id = ? AND reaction_type = 'hate'",
       [postid]
     );
 
-    res.status(201).json({
-      message: "Reaction added successfully.",
-      update: false,
+    return res.json({
+      message:
+        existingReaction.length > 0
+          ? "Reaction updated successfully."
+          : "Reaction added successfully.",
+      update: existingReaction.length > 0,
       reaction_count: {
-        like: reactionCount[0].reaction_count,
-        hate: reactionCount[0].reaction_count,
+        like: countLike[0].reaction_count,
+        hate: countHate[0].reaction_count,
       },
     });
   } catch (error) {

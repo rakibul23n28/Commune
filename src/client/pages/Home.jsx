@@ -237,8 +237,8 @@ const Home = () => {
               <div
                 key={commune.commune_id}
                 className={`rounded-lg  p-4 overflow-hidden  relative ${
-                  commune.events
-                    ? "flex justify-end mr-8"
+                  commune.events.length !== 0
+                    ? "flex justify-end mr-8 "
                     : "max-w-3xl w-full mx-auto"
                 }  `}
               >
@@ -257,7 +257,7 @@ const Home = () => {
                     </button>
 
                     <Link to={`/commune/${commune.commune_id}`}>
-                      <div className="flex justify-between items-center hover:bg-gray-100 rounded p-2 border-spacing-2 border-b-2">
+                      <div className="flex justify-between items-center w-3xl hover:bg-gray-100 rounded p-2 border-spacing-2 border-b-2">
                         <div className="flex justify-between items-center">
                           <img
                             src={
@@ -362,7 +362,7 @@ const Home = () => {
                         {commune.events.slice(0, 2).map((event, index) => (
                           <div
                             key={index}
-                            className="p-4  border border-gray-200 shadow-md hover:shadow-lg transition-shadow bg-white"
+                            className="p-4 max-w-96  border border-gray-200 shadow-md hover:shadow-lg transition-shadow bg-white"
                           >
                             {/* Event Image */}
                             {event.event_image && (

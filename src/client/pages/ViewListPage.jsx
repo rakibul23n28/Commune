@@ -69,6 +69,8 @@ const ViewListPage = () => {
 
       const { like, hate } = response.data.reaction_count;
 
+      console.log(response.data);
+
       setList((prevList) => ({
         ...prevList,
         metaData: {

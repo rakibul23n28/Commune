@@ -108,7 +108,8 @@ const OrdersPage = () => {
                             {parseFloat(item.product_price).toFixed(2)}
                           </p>
                           <p className="text-gray-600 text-sm">
-                            Subtotal: ৳{parseFloat(item.price).toFixed(2)}
+                            Subtotal: ৳
+                            {parseFloat(item.price).toFixed(2) * item.quantity}
                           </p>
                         </div>
                       </div>

@@ -73,7 +73,7 @@ const ViewEventPage = () => {
           <img
             src={event?.event_image}
             alt={event?.event_name}
-            className="w-full h-80 object-cover rounded-lg mb-6 shadow-lg transition transform hover:scale-105"
+            className="w-96 h-auto object-cover rounded-lg mb-6 shadow-lg transition transform hover:scale-105"
           />
         )}
 
