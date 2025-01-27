@@ -81,6 +81,29 @@ const CreatePostPage = () => {
     }
   };
 
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await axios.post("/api/upload-image", formData, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.status === 200) {
+        return response.data.imageUrl; // Return the image URL
+      } else {
+        throw new Error("Image upload failed");
+      }
+    } catch (error) {
+      setErrorMessage("Image upload failed. Please try again.");
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -129,7 +152,11 @@ const CreatePostPage = () => {
                 Content
               </label>
               <div className="h-96 bg-gray-50 rounded-lg overflow-hidden shadow-inner">
-                <QuillEditor value={content} onChange={setContent} />
+                <QuillEditor
+                  value={content}
+                  onChange={setContent}
+                  uploadImage={uploadImage}
+                />
               </div>
             </div>
 

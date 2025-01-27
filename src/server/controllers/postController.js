@@ -57,7 +57,10 @@ export const makeReaction = async (req, res) => {
     res.status(201).json({
       message: "Reaction added successfully.",
       update: false,
-      reaction_count: reactionCount[0].reaction_count,
+      reaction_count: {
+        like: reactionCount[0].reaction_count,
+        hate: reactionCount[0].reaction_count,
+      },
     });
   } catch (error) {
     console.error("Error handling reaction:", error);

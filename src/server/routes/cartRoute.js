@@ -3,9 +3,8 @@ import { pool } from "../config/database.js"; // Assume you have a database conn
 import { validateToken } from "../middleware/auth.js";
 const router = express.Router();
 
-// Fetch all orders with their items for a user
-router.get("/orders/:userId", async (req, res) => {
-  const { userId } = req.params;
+router.get("/orders/:userId/:communeId", async (req, res) => {
+  const { userId, communeId } = req.params;
 
   try {
     // Fetch all orders for the user
@@ -14,21 +13,43 @@ router.get("/orders/:userId", async (req, res) => {
       [userId]
     );
 
-    // Fetch order items for each order
+    // If no orders found, return an empty array
+    if (orders.length === 0) {
+      return res.json({ orders: [] });
+    }
+
+    // Fetch order items with product details for the specific commune
     const orderIds = orders.map((order) => order.order_id);
     const [orderItems] = await pool.query(
-      "SELECT * FROM order_items WHERE order_id IN (?)",
-      [orderIds]
+      `
+      SELECT 
+        oi.order_id,
+        oi.quantity,
+        oi.price,
+        p.product_id,
+        p.product_name,
+        p.description,
+        p.product_image,
+        p.price AS product_price,
+        p.commune_id
+      FROM order_items oi
+      INNER JOIN products p ON oi.product_id = p.product_id
+      WHERE oi.order_id IN (?) AND p.commune_id = ?
+      `,
+      [orderIds, communeId]
     );
 
-    // Combine orders with their items
-    const ordersWithItems = orders.map((order) => ({
-      ...order,
-      items: orderItems.filter((item) => item.order_id === order.order_id),
-    }));
+    // Combine orders with their items, filtered by commune
+    const ordersWithItems = orders
+      .map((order) => ({
+        ...order,
+        items: orderItems.filter((item) => item.order_id === order.order_id),
+      }))
+      .filter((order) => order.items.length > 0); // Only include orders with items from the specified commune
 
     res.json({ orders: ordersWithItems });
   } catch (error) {
+    console.error("Error fetching orders:", error);
     res.status(500).json({ message: "Failed to fetch orders." });
   }
 });

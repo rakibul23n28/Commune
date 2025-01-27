@@ -1,8 +1,12 @@
 import React, { useEffect, useRef } from "react";
 import Quill from "quill";
+import ImageUploader from "quill-image-uploader";
 import "quill/dist/quill.snow.css";
 
-const QuillEditor = ({ value, onChange }) => {
+// Register the image uploader module
+Quill.register("modules/imageUploader", ImageUploader);
+
+const QuillEditor = ({ value, onChange, uploadImage }) => {
   const editorRef = useRef(null);
   const quillInstance = useRef(null);
 
@@ -19,6 +23,9 @@ const QuillEditor = ({ value, onChange }) => {
             [{ color: [] }, { background: [] }],
             ["link", "image"],
           ],
+          imageUploader: {
+            upload: uploadImage, // Custom image upload function
+          },
         },
       });
 
@@ -27,7 +34,7 @@ const QuillEditor = ({ value, onChange }) => {
         onChange(html);
       });
     }
-  }, [onChange]);
+  }, [onChange, uploadImage]);
 
   useEffect(() => {
     if (

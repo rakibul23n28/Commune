@@ -22,10 +22,10 @@ const OrdersPage = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `/api/cart/orders/${user.id}?commune_id=${communeid}`
+        `/api/cart/orders/${user.id}/${communeid}`
       );
-      console.log("Filtered Orders Response:", response.data); // Debugging
-      setOrders(response.data.orders || []); // Ensure orders fallback to empty array
+      console.log("Filtered Orders Response:", response.data);
+      setOrders(response.data.orders || []);
     } catch (error) {
       setToast({
         message: error.response?.data?.message || "Failed to load orders.",
@@ -83,15 +83,37 @@ const OrdersPage = () => {
                 <h3 className="mt-4 text-md font-medium">Order Items:</h3>
                 <ul className="list-disc list-inside">
                   {order.items?.map((item) => (
-                    <li key={item.order_item_id} className="text-gray-700">
-                      {item.product_name} - {item.quantity} x ৳
-                      {parseFloat(item.price).toFixed(2)}
+                    <li key={item.order_item_id} className="mb-4">
+                      <div className="flex items-start space-x-4">
+                        <img
+                          src={item.product_image}
+                          alt={item.product_name}
+                          className="w-16 h-16 rounded"
+                        />
+                        <div>
+                          <h4 className="font-medium text-gray-800">
+                            {item.product_name}
+                          </h4>
+                          <p className="text-gray-600 text-sm">
+                            {item.description}
+                          </p>
+                          <p className="text-gray-600 text-sm">
+                            Commune ID: {item.commune_id}
+                          </p>
+                          <p className="text-gray-600 text-sm">
+                            Quantity: {item.quantity}
+                          </p>
+                          <p className="text-gray-600 text-sm">
+                            Price per unit: ৳
+                            {parseFloat(item.product_price).toFixed(2)}
+                          </p>
+                          <p className="text-gray-600 text-sm">
+                            Subtotal: ৳{parseFloat(item.price).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
                     </li>
-                  )) || (
-                    <li className="text-gray-600">
-                      No items found for this order.
-                    </li>
-                  )}
+                  ))}
                 </ul>
               </div>
             ))}

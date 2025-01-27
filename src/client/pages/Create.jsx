@@ -17,7 +17,6 @@ const Create = () => {
   });
 
   const { user } = useAuth();
-
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -42,6 +41,29 @@ const Create = () => {
     setFormData((prevState) => ({ ...prevState, content: value })); // Update content only
   };
 
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await axios.post("/api/upload-image", formData, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.status === 200) {
+        return response.data.imageUrl; // Return the image URL
+      } else {
+        throw new Error("Image upload failed");
+      }
+    } catch (error) {
+      setError("Image upload failed. Please try again.");
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -50,7 +72,7 @@ const Create = () => {
         formDataToSend.append(key, formData[key]);
       }
 
-      // alart if no commune image is selected
+      // Alert if no commune image is selected
       if (!formDataToSend.get("commune_image")) {
         alert("Please select a commune image.");
         return;
@@ -62,6 +84,7 @@ const Create = () => {
           "Content-Type": "multipart/form-data",
         },
       });
+
       if (response.status === 201) {
         navigate(`/profile/${user.username}`);
       }
@@ -72,7 +95,7 @@ const Create = () => {
 
   return (
     <Layout>
-      <div className="max-w-[50rem] w-full mx-auto p-4  bg-white rounded-lg shadow-md">
+      <div className="max-w-[50rem] w-full mx-auto p-4 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">
           Create a Commune
         </h2>
@@ -140,6 +163,7 @@ const Create = () => {
               <QuillEditor
                 value={formData.content}
                 onChange={handleQuillChange}
+                uploadImage={uploadImage} // Pass uploadImage function
               />
             </div>
           </div>

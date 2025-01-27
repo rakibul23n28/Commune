@@ -104,6 +104,29 @@ const EditCommune = () => {
     }
   };
 
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await axios.post("/api/upload-image", formData, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (response.status === 200) {
+        return response.data.imageUrl; // Return the image URL
+      } else {
+        throw new Error("Image upload failed");
+      }
+    } catch (error) {
+      setError("Image upload failed. Please try again.");
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -182,6 +205,7 @@ const EditCommune = () => {
               <QuillEditor
                 value={formData.content}
                 onChange={handleQuillChange}
+                uploadImage={uploadImage}
               />
             </div>
           </div>

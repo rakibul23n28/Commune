@@ -4,6 +4,62 @@ import { pool } from "../config/database.js";
 
 const router = express.Router();
 
+import multer from "multer";
+import path from "path";
+
+// Configure Multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // Define the folder where images will be stored
+    cb(null, "uploads/images"); // Store in 'uploads' folder
+  },
+  filename: (req, file, cb) => {
+    // Use a unique name for the file
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const extension = path.extname(file.originalname); // Get file extension
+    cb(null, `${file.fieldname}-${uniqueSuffix}${extension}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    // Only accept image files
+    const allowedMimeTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/jpg",
+      "image/jfif",
+    ];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"));
+    }
+  },
+  limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+});
+
+// POST route for uploading images
+router.post("/upload-image", upload.single("image"), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Construct the public URL for the uploaded image
+    const imageUrl = `/uploads/images/${req.file.filename}`;
+    res.status(200).json({ imageUrl });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Image upload failed", error: error.message });
+  }
+});
+
 router.get("/", (req, res) => {
   return res.status(200).json({ message: "Hello World!" });
 });

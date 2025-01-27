@@ -285,7 +285,7 @@ const CommuneNavbar = ({ name = "" }) => {
             onChange={handleCategoryChange}
             className="px-3 py-1 text-black rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
           >
-            <option value="posts">Posts / Lists </option>
+            <option value="posts">Content</option>
             <option value="products">Products</option>
             <option value="events">Events</option>
             <option value="users">users</option>

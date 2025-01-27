@@ -310,6 +310,8 @@ export const getAllCommunes = async (req, res) => {
       }
     });
 
+    console.log(communes.length);
+
     res.status(200).json({ communes });
   } catch (error) {
     console.error(error);
@@ -333,18 +335,23 @@ export const getUserInterestedCommunes = async (req, res) => {
       (interest) => interest.interest_name
     );
 
-    // console.log(interestNames);
-
-    // Step 2: Query all communes
+    // Step 2: Query all communes (with pre-aggregated data)
     const communeQuery = `
       SELECT c.*, 
-             COUNT(cr.review_id) OVER (PARTITION BY c.commune_id) AS review_count,
-             AVG(cr.rating) OVER (PARTITION BY c.commune_id) AS avg_rating,
-             cm.total_joined_users
+             COALESCE(cr.review_count, 0) AS review_count,
+             COALESCE(cr.avg_rating, 0) AS avg_rating,
+             COALESCE(cm.total_joined_users, 0) AS total_joined_users
       FROM communes c
-      LEFT JOIN commune_reviews cr ON c.commune_id = cr.commune_id
       LEFT JOIN (
-          SELECT commune_id, COUNT(membership_id) AS total_joined_users
+          SELECT commune_id, 
+                 COUNT(review_id) AS review_count, 
+                 AVG(rating) AS avg_rating
+          FROM commune_reviews
+          GROUP BY commune_id
+      ) cr ON c.commune_id = cr.commune_id
+      LEFT JOIN (
+          SELECT commune_id, 
+                 COUNT(membership_id) AS total_joined_users
           FROM commune_memberships
           WHERE join_status = 'approved'
           GROUP BY commune_id
@@ -390,19 +397,24 @@ export const getUserInterestedCommunes = async (req, res) => {
     // Step 5: Attach events to public communes
     const attachEvents = (communes) =>
       communes.map((commune) => {
-        if (commune.privacy === "public") {
-          commune.events = events
-            .filter((event) => event.commune_id === commune.commune_id)
-            .slice(0, 2); // Limit to 2 events
-        } else {
-          commune.events = [];
-        }
+        const filteredEvents = events.filter(
+          (event) => event.commune_id === commune.commune_id
+        );
+
+        commune.events =
+          commune.privacy === "public" ? filteredEvents.slice(0, 2) : [];
+
         return commune;
       });
 
+    // Deduplicate communes when merging
     const sortedCommunes = [
-      ...attachEvents(interestMatchedCommunes),
-      ...attachEvents(otherCommunes),
+      ...new Map(
+        [
+          ...attachEvents(interestMatchedCommunes),
+          ...attachEvents(otherCommunes),
+        ].map((commune) => [commune.commune_id, commune])
+      ).values(),
     ];
 
     // Step 6: Respond with sorted data

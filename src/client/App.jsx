@@ -113,7 +113,9 @@ const App = () => (
                   path="create/:communeid/list"
                   element={
                     <ProtectedRoute>
-                      <DynamicListingForm />
+                      <AdminModeratorProtected>
+                        <DynamicListingForm />
+                      </AdminModeratorProtected>
                     </ProtectedRoute>
                   }
                 />
